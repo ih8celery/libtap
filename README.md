@@ -47,51 +47,59 @@ information about all parts of the project.
 ##API
   standard API:
     ```c++
-    plan(int n)
+    plan(unsigned)
+    plan(details::skill_all_type, std::string& = "")
+    plan(details::no_plan_type)
     ```
       declare that n tests will be run
 
     ```c++
-    ok(bool condition)
-    ok(bool condition, std::string description)
+    unsigned planned()
+    unsigned encountered()
+    ```
+
+    ```c++
+    ok(bool condition, std::string& = "")
     ```
       pass test if condition is true
 
     ```c++
-    not_ok(bool condition)
-    not_ok(bool condition, std::string description)
+    not_ok(bool, std::string& = "")
     ```
       pass test if condition is false
 
     ```c++
-    pass(std::string name, std::string reason)
+    template <typename T, typename U> 
+    ```c++
+    pass(std::string& = "")
     ```
       automatically pass test
 
     ```c++
-    fail(std::string name, std::string reason)
+    fail(std::string& = "")
     ```
       automatically fail test
 
     ```c++
-    skip(int n)
+    skip(unsigned, std::string& = "")
     ```
       declare that n tests will be skipped
 
     ```c++
-    note(std::string message)
+    note(std::string)
     ```
       append useful information to the output stream
 
     ```c++
-    diag(std::string message)
+    diag(std::string)
     ```
       append a message to the output of current test without disrupting
     its basic output
 
     ```c++
     done_testing()
-    done_testing(int n)
+    done_testing(unsigned)
+    bail_out(std::string& = "")
     ```
       announces to the harness that testing is complete
 
@@ -102,23 +110,23 @@ information about all parts of the project.
     current plan or 255, whichever is the lesser
 
     ```c++
-    setoutput()
+    set_output(std::ostream)
     ```
       sets the stream used to report test results
 
     ```c++
-    seterror()
+    set_error(std::ostream)
     ```
       sets the stream used to report errors
 
   extras:
     ```c++
-    START_TESTING(int n)
+    TEST_START(int n)
     ```
       macro similar to plan
 
     ```c++
-    END_TESTING()
+    TEST_END()
     ```
       macro similar to done_testing
 
@@ -134,6 +142,9 @@ information about all parts of the project.
       macro that catches exceptions from executing an assignment
     and prints test description
 
+    ```c++
+    FAIL(action, std::string)
+    ```
 ##Usage Notes
 
   TAP is delivered to you in the TAP namespace, which is generally
