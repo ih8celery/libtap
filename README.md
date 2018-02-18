@@ -6,9 +6,7 @@ version 1.1.0
 it conforms to the Test Anything Protocol (TAP for short) originally created for
 perl.
 
-  see the current TAP specification [here](https://testanything.org/tap-version-13-specification.html) or look below 
-to the API section to see a description of the salient features of the
-implementation. 
+  see the current TAP specification [here](https://testanything.org/tap-version-13-specification.html) or look below to the API section to see                                                       a description of the salient features of the implementation. 
 
   libtap++ was created by [Leon Timmermans](https://github.com/Leont); the code hosted here is a
 maintenance version developed to address some problems in the original implementation.
@@ -45,106 +43,96 @@ unavailable. this is a work in progress.
 information about all parts of the project.
 
 ##API
-  standard API:
-    ```c++
-    plan(unsigned)
-    plan(details::skill_all_type, std::string& = "")
-    plan(details::no_plan_type)
-    ```
-      declare that n tests will be run
+```c++
+plan(unsigned)
+plan(details::skill_all_type, std::string& = "")
+plan(details::no_plan_type)
 
-    ```c++
-    unsigned planned()
-    unsigned encountered()
-    ```
+  declare that n tests will be run
 
-    ```c++
-    ok(bool condition, std::string& = "")
-    ```
-      pass test if condition is true
+unsigned planned()
+unsigned encountered()
 
-    ```c++
-    not_ok(bool, std::string& = "")
-    ```
-      pass test if condition is false
+ok(bool condition, std::string& = "")
 
-    ```c++
-    template <typename T, typename U> 
-    ```c++
-    pass(std::string& = "")
-    ```
-      automatically pass test
+  pass test if condition is true
 
-    ```c++
-    fail(std::string& = "")
-    ```
-      automatically fail test
+not_ok(bool, std::string& = "")
 
-    ```c++
-    skip(unsigned, std::string& = "")
-    ```
-      declare that n tests will be skipped
+  pass test if condition is false
 
-    ```c++
-    note(std::string)
-    ```
-      append useful information to the output stream
+template <typename T, typename U> bool is(T&, U&, std::string&)
+      
+  pass test if first two arguments have equal values same type
 
-    ```c++
-    diag(std::string)
-    ```
-      append a message to the output of current test without disrupting
-    its basic output
+template <typename T, typename U> bool isnt(T&, U&, std::string&)
+      
+   pass test if first two arguments differ in type and/or value
 
-    ```c++
-    done_testing()
-    done_testing(unsigned)
-    bail_out(std::string& = "")
-    ```
-      announces to the harness that testing is complete
+pass(std::string& = "")
 
-    ```c++
-    exit_status()
-    ```
-      returns the exit status, which is the number of tests failed in the
-    current plan or 255, whichever is the lesser
+  automatically pass test
 
-    ```c++
-    set_output(std::ostream)
-    ```
-      sets the stream used to report test results
+fail(std::string& = "")
 
-    ```c++
-    set_error(std::ostream)
-    ```
-      sets the stream used to report errors
+  automatically fail test
 
-  extras:
-    ```c++
-    TEST_START(int n)
-    ```
-      macro similar to plan
+skip(unsigned, std::string& = "")
 
-    ```c++
-    TEST_END()
-    ```
-      macro similar to done_testing
+  declare that n tests will be skipped
 
-    ```c++
-    TRY(statement, std::string description)
-    ```
-      macro that catches exceptions from executing a statement and
-    prints test description
+note(std::string)
 
-    ```c++
-    TRY_DECL(declaration, std::string, message)
-    ```
-      macro that catches exceptions from executing an assignment
-    and prints test description
+  append useful information to the output stream
 
-    ```c++
-    FAIL(action, std::string)
-    ```
+diag(std::string)
+
+  append a message to the output of current test without disrupting
+its basic output
+
+done_testing()
+done_testing(unsigned)
+bail_out(std::string& = "")
+
+  announces to the harness that testing is complete
+
+exit_status()
+
+  returns the exit status, which is the number of tests failed in the
+current plan or 255, whichever is the lesser
+
+set_output(std::ostream)
+
+  sets the stream used to report test results
+
+set_error(std::ostream)
+
+  sets the stream used to report errors
+```
+
+  Extras:
+```c++
+TEST_START(int n)
+
+  macro similar to plan
+
+TEST_END()
+
+  macro similar to done_testing
+
+TRY(statement, std::string description)
+
+  macro that catches exceptions from executing a statement and
+prints test description
+
+TRY_DECL(declaration, std::string, message)
+
+  macro that catches exceptions from executing an assignment
+and prints test description
+
+FAIL(action, std::string)
+
+```
 ##Usage Notes
 
   TAP is delivered to you in the TAP namespace, which is generally

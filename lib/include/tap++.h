@@ -3,9 +3,7 @@
 
 #include <iostream>
 #include <string>
-#include <boost/type_traits/is_convertible.hpp>
-#include <boost/type_traits/is_floating_point.hpp>
-#include <boost/utility/enable_if.hpp>
+#include <type_traits>
 #include <cmath>
 
 namespace TAP {
@@ -89,7 +87,7 @@ namespace TAP {
 		*details::output << "# " << first << second << third << fourth << fifth << std::endl;
 	}
 
-	template<typename T, typename U> typename boost::disable_if<typename boost::is_floating_point<U>::type, bool>::type is(const T& left, const U& right, const std::string& message = "") {
+	template<typename T, typename U> typename std::enable_if<!std::is_floating_point<U>::value, bool>::type is(const T& left, const U& right, const std::string& message = "") {
 		using namespace TAP::details;
 		try {
 			bool ret = ok(left == right, message);
@@ -118,7 +116,7 @@ namespace TAP {
 		}
 	}
 
-	template<typename T, typename U> typename boost::disable_if<typename boost::is_floating_point<U>::type, bool>::type isnt(const T& left, const U& right, const std::string& message = "") {
+	template<typename T, typename U> typename std::enable_if<!std::is_floating_point<U>::value, bool>::type isnt(const T& left, const U& right, const std::string& message = "") {
 		try {
 			return ok(left != right, message);
 		}
@@ -136,7 +134,7 @@ namespace TAP {
 		}
 	}
 
-	template<typename T, typename U> typename boost::enable_if<typename boost::is_floating_point<U>::type, bool>::type is(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
+	template<typename T, typename U> typename std::enable_if<std::is_floating_point<U>::value, bool>::type is(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
 		using namespace TAP::details;
 		try {
 			bool ret = ok(2 * fabs(left - right) / (fabs(left) + fabs(right)) < epsilon);
@@ -165,7 +163,7 @@ namespace TAP {
 		}
 	}
 
-	template<typename T, typename U> typename boost::enable_if<typename boost::is_floating_point<U>::type, bool>::type isnt(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
+	template<typename T, typename U> typename std::enable_if<std::is_floating_point<U>::value, bool>::type isnt(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
 		using namespace TAP::details;
 		try {
 			bool ret = 2 * fabs(left - right) / (fabs(left) + fabs(right)) > epsilon;
@@ -187,11 +185,11 @@ namespace TAP {
 	}
 
 	template<typename T, typename U> bool is_convertible(const std::string& message) {
-		return ok(boost::is_convertible<T, U>::value, message);
+		return ok(std::is_convertible<T, U>::value, message);
 	}
 
 	template<typename T, typename U> bool is_inconvertible(const std::string& message) {
-		return ok(!boost::is_convertible<T, U>::value, message);
+		return ok(!std::is_convertible<T, U>::value, message);
 	}
 
 	extern std::string TODO; 
