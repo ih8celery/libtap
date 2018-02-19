@@ -5,18 +5,18 @@
  */
 
 #define WANT_TEST_EXTRAS
-#include "headers/tap++.h"
+#include "tap++.h"
+
+using namespace TAP;
 
 int main() {
-  TEST_START(3);
+  TEST_START(1);
 
-  TRY(throw 1, "throws an exception");
+  //TRY(throw 1, "throws an exception");
 
   TRY_DECL(int age = 5, "declare age to be 5");
 
-  FAIL(int level{9000.001},"should fail for some reason");
-
-  TEST_END();
+  TEST_END(1);
 
   return 0;
 }

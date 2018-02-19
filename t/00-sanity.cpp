@@ -4,12 +4,12 @@
  * perform the most basic tests of libtap, not going into great depth
  */
 
-#include "headers/tap++.h"
+#include "tap++.h"
 
 using namespace TAP;
 
 int main() {
-  plan(no_plan);
+  plan(4);
 
   ok(1, "the value 1 is true");
 

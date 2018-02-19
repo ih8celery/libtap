@@ -5,3 +5,7 @@
 **/*.so
 Makefile
 lib/src/Makefile
+Testing/
+t/basic
+t/extra
+t/sanity
