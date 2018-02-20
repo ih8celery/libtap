@@ -1,4 +1,4 @@
-version 1.1.0
+version 1.1.0.1
 
 #What is libtap++?
 
@@ -23,10 +23,10 @@ directed more to perl users than to C++ programmers. after considering my schedu
 I decided to maintain libtap++ for myself.
 
   Since then my goals in maintaining it have matured into the following:
-1. to keep the code up to date with the penultimate released C++ standard (C++14)
+1. to keep the code up to date with the C++11 standard
 2. to keep the project conformant with the latest TAP specification (TAP 13)
-3. to move the build process from a custom perl build to more "native" C++ build tools
-4. to remove non-standard libraries (read: Boost) from the dependencies
+3. ~~to move the build process from a custom perl build to more "native" C++ build tools~~
+4. ~~to remove non-standard libraries (read: Boost) from the dependencies~~
 5. to develop and test libtap++ for multiple platforms
 6. to improve the documentation
 7. to take requests for non-TAP extensions that advantageously employ C++ features.
@@ -48,7 +48,7 @@ plan(unsigned)
 plan(details::skill_all_type, std::string& = "")
 plan(details::no_plan_type)
 
-  declare that n tests will be run
+  declare that tests will be run
 
 unsigned planned()
 unsigned encountered()

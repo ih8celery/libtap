@@ -1,7 +1,6 @@
 #define WANT_TEST_EXTRAS
 #include "tap++.h"
 #include <stack>
-#include <boost/lexical_cast.hpp>
 #include <cstdlib>
 
 namespace TAP {
@@ -37,9 +36,6 @@ namespace TAP {
 			*details::output << "1.." << tests << extra << std::endl;
 			has_output_plan = true;
 		}
-		inline const std::string to_string(unsigned num) throw() {
-			return boost::lexical_cast<std::string>(num);
-		}
 
 		inline void _done_testing(unsigned tests) throw(fatal_exception) {
 			static bool is_done = false;
@@ -50,7 +46,7 @@ namespace TAP {
 			is_done = true;
 
 			if (expected && tests != expected) {
-				fail(std::string("planned to run ") + to_string(expected) + " tests but done_testing() expects " + to_string(tests));
+				fail(std::string("planned to run ") + std::to_string(expected) + " tests but done_testing() expects " + std::to_string(tests));
 			}
 			else {
 				expected = tests;
