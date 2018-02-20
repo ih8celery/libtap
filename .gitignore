@@ -1,11 +1,6 @@
-**/CMakeFiles/*
-**/CMakeCache.txt
-**/*.cmake
 **/*.o
 **/*.so
-Makefile
-lib/src/Makefile
-Testing/
+**/build
 t/basic
 t/extra
 t/sanity
