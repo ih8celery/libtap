@@ -152,7 +152,19 @@ libtap++ will have no non-standard dependencies.
 #Installation
 
 ##Ubuntu
-  // TODO manual installation process with CMake
+  I recommend you do an out-source cmake build, but it is not necessary.
+To do this, start with the following in your shell from the project:
+  ```shell
+    mkdir build && cd build
+    cmake ..
+  ```
+
+After these steps, you can use make:
+  ```shell
+    make
+    make run_tests
+    sudo make install
+  ```
 
 ##Mac OS X
   Mac is not yet supported
