@@ -1,0 +1,6 @@
+**/*.o
+**/*.so
+**/build
+t/basic
+t/extra
+t/sanity
