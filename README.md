@@ -1,6 +1,6 @@
 version 1.1.0.2
 
-#What is libtap++?
+# What is libtap++?
   libtap++ is a simple library providing a test harness to C++ programs of all sizes.
 it conforms to the Test Anything Protocol (TAP for short) originally created for
 perl. see the current TAP specification [here](https://testanything.org/tap-version-13-specification.html) to find
@@ -9,7 +9,7 @@ out what TAP is all about.
   libtap++ was created by [Leon Timmermans](https://github.com/Leont); the code hosted here is a
 maintenance version developed to address some problems in the original implementation.
 
-#Why I forked Leont's project
+# Why I forked Leont's project
   I have taken up maintenance of this library, formerly part
 of [libperl++](https://github.com/Leont/libperl--), from the original author, Leon Timmermans, who appears to have
 abandoned this project in late 2011. I have no association with Mr. Timmermans,
@@ -32,12 +32,12 @@ for C++ projects, I decided to maintain libtap++ for myself.
   I believe TAP is an important innovation in testing that C++ programmers should
 be able to enjoy--on their own terms.
 
-#Where to Read More
+# Where to Read More
   as development continues, [userman](./doc/userman.md) will be updated with complete 
 information about all parts of the project. this document was originally
 written by Leon Timmermans in POD format.
 
-##Usage Notes
+## Usage Notes
   TAP is delivered to you in the TAP namespace, which is generally
 safe to `use`.
 
@@ -46,15 +46,15 @@ before including the header. use the extras when you want to catch
 exceptions within your tests. in general, you should not need the
 extras.
 
-##Dependencies
+## Dependencies
 libtap++ depends only on the standard libraries.
 
-building libtap++ requires a C++ compiler with support for C++11 and 
+building libtap++ requires a C++ compiler with support for C++11, and 
 CMake >= 3.0
 
-#Installation
+# Installation
 
-##Ubuntu
+## Ubuntu
   I recommend you do an out-source cmake build. to do this, start with
 the following in your shell from the project directory:
   ```shell
@@ -69,14 +69,14 @@ after these steps, you can use make:
     make run_tests
     sudo make install
   ```
-##Mac OS X
+## Mac OS X
   Mac is not yet supported, as I do not have access to one for testing.
 the build process will probably be similar to that used by Ubuntu.
 
-##Windows
+## Windows
   Windows is being tested. instructions will be added soon (2-20-2018).
 
-#Issues
+# Issues
   please contact me about building and testing for your system if it
 is not currently supported.
 
@@ -85,7 +85,7 @@ read the information in [creating-issues](./doc/creating-issues.md) and [FAQs](.
 creating a Github issue, and be sure you have read the docs relevant
 to what you are doing (see above).
 
-#COPYRIGHT AND LICENCE
+# COPYRIGHT AND LICENCE
 
 Copyright (C) 2007, 2008, 2009, 2010 Leon Timmermans
 
