@@ -42,9 +42,7 @@ written by Leon Timmermans in POD format.
 safe to `use`.
 
   the test extras are accessible by `#define`ing WANT\_TEST\_EXTRAS
-before including the header. use the extras when you want to catch
-exceptions within your tests. in general, you should not need the
-extras.
+before including the header.
 
 ## Dependencies
 libtap++ depends only on the standard libraries.
@@ -86,7 +84,6 @@ creating a Github issue, and be sure you have read the docs relevant
 to what you are doing (see above).
 
 # COPYRIGHT AND LICENCE
-
 Copyright (C) 2007, 2008, 2009, 2010 Leon Timmermans
 
 Copyright (C) 2018 Adam Marshall
