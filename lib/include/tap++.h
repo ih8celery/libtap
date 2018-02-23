@@ -244,6 +244,7 @@ namespace TAP {
   void skip_todo(const std::string& reason);
 }
 
+/* deprecated. use TRY_OK instead */
 #define TRY(action, name) do {\
     try {\
       action;\
@@ -258,6 +259,49 @@ namespace TAP {
     }\
   } while (0)
 
+/* 
+ * exception-handling analogue to TAP::ok, where code that throws an
+ * exception fails the test
+ * 
+ * NOTE: creates a new scope for try/catch block
+ */
+#define TRY_OK(code, description) do {\
+    try {\
+      action;\
+      TAP::pass(name);\
+    }\
+    catch (const std::exception& e) {\
+      TAP::fail(name);\
+      TAP::note("Caught exception: ", e.what());\
+    }\
+    catch (...) {\
+      TAP::fail(name);\
+    }\
+  } while (0)
+
+/*
+ * exception-handling analogue to TAP::not_ok, where code that does
+ * NOT throw an exception fails the test
+ * 
+ * NOTE: creates a new scope for try/catch block
+ */
+#define TRY_NOT_OK(code, description) do {\
+    try {\
+      action;\
+      TAP::fail(name);\
+      TAP::note("Expected an exception");\
+    }\
+    catch (const std::exception& e) {\
+      TAP::pass(name);\
+      TAP::note("Caught exception: ", e.what());\
+    }\
+    catch (...) {\
+      TAP::pass(name);\
+      TAP::note("Caught non-standard exception");\
+    }\
+  } while (0)
+
+/* deprecated. use TRY_NOT_OK instead */
 #define FAIL(action, name) do {\
     try {\
       action;\
@@ -268,11 +312,20 @@ namespace TAP {
     }\
   } while (0)
 
+/* 
+ * begin a sequence of tests enclosed in a try/catch block.
+ * paired with TEST_END
+ */
 #define TEST_START(num) {\
     const char* _current_message = NULL;\
     TAP::plan(num);\
     try {
 
+/*
+ * end a sequence of tests by checking that the planned number of tests
+ * were run and by handling TAP-specific and standard exceptions.
+ * paired with TEST_START
+ */
 #define TEST_END \
       if (TAP::encountered() < TAP::planned()) {\
         TAP::note("Looks like you planned ", TAP::planned(), " tests but only ran ", TAP::encountered());\
@@ -301,11 +354,17 @@ namespace TAP {
     return TAP::exit_status();\
   }
 
+/*
+ * TODO document
+ */
 #define BLOCK_START(planned) \
   try {\
     todo_guard foo##planned;\
     TAP::details::start_block(planned);
 
+/*
+ * TODO document
+ */
 #define BLOCK_END \
     if (TAP::encountered() != TAP::details::stop_block()) {\
       TODO::note("Not enough tests for plan!");\

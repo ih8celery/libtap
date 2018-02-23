@@ -1,4 +1,4 @@
-version 1.1.0.2
+version 1.2.0.0
 
 # What is libtap++?
   libtap++ is a simple library providing a test harness to C++ programs of all sizes.
