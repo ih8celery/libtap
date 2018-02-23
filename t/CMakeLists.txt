@@ -18,3 +18,7 @@ set (CUSTOM_TEST_EXECUTABLES
 add_custom_target (run_tests
   COMMAND ${CUSTOM_TEST_DRIVER} ${CUSTOM_TEST_EXECUTABLES}
 )
+
+add_test (NAME test_sanity COMMAND sanity)
+add_test (NAME test_basic COMMAND basic)
+add_test (NAME test_extra COMMAND extra)
