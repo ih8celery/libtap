@@ -4,16 +4,25 @@
 #include <cstdlib>
 
 namespace TAP {
+  /* 
+   * initialized with the description of the current unimplemented test,
+   * i.e. the todo test. empty string signals that test is normal 
+   */
   std::string TODO = "";
 
+  /*
+   * constants used in invoking special behavior from plan function
+   */
   const details::skip_all_type skip_all = details::skip_all_type();
   const details::no_plan_type no_plan = details::no_plan_type();
 
   namespace {
-    unsigned expected = 0;
-    unsigned counter = 0;
-    unsigned not_oks = 0;
-
+    unsigned expected = 0; // planned number of tests as initialized by plan()
+    unsigned counter = 0; // count of all tests run so far
+    unsigned not_oks = 0; // count of tests which fail
+    
+    // TODO rename to todo_description()
+    // and simply return TODO. initialize said variable with " # TODO " prepended
     std::string todo_test() noexcept {
       if (TODO.empty()) {
         return TODO;
@@ -23,6 +32,7 @@ namespace TAP {
       }
     }
 
+    /* are we currently in a test marked todo? */
     bool is_todo_test() noexcept { return !TODO.empty(); }
 
     bool is_planned = false;
@@ -31,8 +41,9 @@ namespace TAP {
 
     void output_plan(unsigned tests, const std::string& extra = "") {
       if (has_output_plan) {
-        throw fatal_exception("Can't plan twice");
+        throw fatal_exception("Can't print plan twice");
       }
+
       *details::output << "1.." << tests << extra << std::endl;
       has_output_plan = true;
     }
@@ -40,12 +51,13 @@ namespace TAP {
     inline void _done_testing(unsigned tests) {
       static bool is_done = false;
       if (is_done) {
-        fail("done_testing() was already called");
+        fail("done_testing() was already called"); // TODO replace call to fail with non-test fn
         return;
       }
       is_done = true;
 
       if (expected && tests != expected) {
+        // TODO unmix test output from error?
         fail(std::string("planned to run ") + std::to_string(expected) + " tests but done_testing() expects " + std::to_string(tests));
       }
       else {
@@ -119,9 +131,7 @@ namespace TAP {
   }
 
   bool ok(bool is_ok, const std::string& message) {
-    const char* hot_or_not = is_ok ? "" : "not ";
-
-    *details::output << hot_or_not << "ok " << ++counter; 
+    *details::output << (is_ok ? "ok " : "not ok ") << ++counter; 
     *details::output << " - " << message << todo_test()  << std::endl;
 
     if (!is_ok && !is_todo_test()) {

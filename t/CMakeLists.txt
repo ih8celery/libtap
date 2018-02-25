@@ -15,7 +15,7 @@ set (CUSTOM_TEST_EXECUTABLES
   "${EXECUTABLE_OUTPUT_PATH}/extra"
 )
 
-add_custom_target (run_tests
+add_custom_target (debug
   COMMAND ${CUSTOM_TEST_DRIVER} ${CUSTOM_TEST_EXECUTABLES}
 )
 

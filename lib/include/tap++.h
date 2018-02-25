@@ -4,12 +4,13 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
-//#include <cmath>
+#include <cmath>
 
 namespace TAP {
   namespace details {
     struct skip_all_type {};
     struct no_plan_type {};
+
     extern std::ostream* output;
     extern std::ostream* error;
 
@@ -102,120 +103,145 @@ namespace TAP {
 
   template<typename T, typename U> 
   typename std::enable_if<!std::is_floating_point<U>::value, bool>::type 
-        is(const T& left, const U& right, const std::string& message = "") {
+  is(const T& left, const U& right, const std::string& description = "") {
     using namespace TAP::details;
+
     try {
-      bool ret = ok(left == right, message);
-      if (!ret) {
-        diag(failed_test_msg()," '", message, "'");
+      bool is_ok = ok(left == right, description);
+
+      if (!is_ok) { // TODO is this messaging required by TAP13? if so, apply to below as well
+        diag(failed_test_msg()," '", description, "'");
         diag("       Got: ", left);
         diag("  Expected: ", right);
       }
-      return ret;
+
+      return is_ok;
     }
     catch(const std::exception& e) {
-      fail(message);
-      diag(failed_test_msg()," '", message, "'");
-      diag("Cought exception '", e.what(), "'");
+      fail(description);
+      diag(failed_test_msg()," '", description, "'");
+      diag("Caught exception '", e.what(), "'");
       diag("       Got: ", left);
       diag("  Expected: ", right);
+
       return false;
     }
     catch(...) {
-      fail(message);
-      diag(failed_test_msg()," '", message, "'");
-      diag("Cought unknown exception");
+      fail(description);
+      diag(failed_test_msg()," '", description, "'");
+      diag("Caught unknown exception");
       diag("       Got: ", left);
       diag("  Expected: ", right);
+
       return false;
     }
   }
 
   template<typename T, typename U>
   typename std::enable_if<!std::is_floating_point<U>::value, bool>::type
-        isnt(const T& left, const U& right, const std::string& message = "") {
+  isnt(const T& left, const U& right, const std::string& description = "") {
     try {
-      return ok(left != right, message);
+      return ok(left != right, description);
     }
     catch(const std::exception& e) {
-      fail(message);
-      diag("In test ", message);
-      diag("Cought exception: ", e.what());
+      fail(description);
+      diag("In test ", description);
+      diag("Caught exception: ", e.what());
+
       return false;
     }
     catch(...) {
-      fail(message);
-      diag("In test ", message);
-      diag("Cought unknown exception");
+      fail(description);
+      diag("In test ", description);
+      diag("Caught unknown exception");
+
       return false;
     }
   }
 
   template<typename T, typename U>
   typename std::enable_if<std::is_floating_point<U>::value, bool>::type
-        is(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
+  is(const T& left, const U& right, const std::string& description = "", double epsilon = 0.01) {
     using namespace TAP::details;
+
     try {
-      bool ret = ok(2 * fabs(left - right) / (fabs(left) + fabs(right)) < epsilon);
-      if (!ret) {
-        diag(failed_test_msg()," '", message, "'");
+      bool is_ok = ok(2 * fabs(left - right) / (fabs(left) + fabs(right)) < epsilon);
+
+      if (!is_ok) {
+        diag(failed_test_msg()," '", description, "'");
         diag("       Got: ", left);
         diag("  Expected: ", right);
       }
-      return ret;
+
+      return is_ok;
     }
     catch(const std::exception& e) {
-      fail(message);
-      diag(failed_test_msg()," '", message, "'");
-      diag("Cought exception '", e.what(), "'");
+      fail(description);
+      diag(failed_test_msg()," '", description, "'");
+      diag("Caught exception '", e.what(), "'");
       diag("       Got: ", left);
       diag("  Expected: ", right);
+
       return false;
     }
     catch(...) {
-      fail(message);
-      diag(failed_test_msg()," '", message, "'");
-      diag("Cought unknown exception");
+      fail(description);
+      diag(failed_test_msg()," '", description, "'");
+      diag("Caught unknown exception");
       diag("       Got: ", left);
       diag("  Expected: ", right);
+
       return false;
     }
   }
 
-  template<typename T, typename U> typename std::enable_if<std::is_floating_point<U>::value, bool>::type isnt(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
+  template<typename T, typename U>
+  typename std::enable_if<std::is_floating_point<U>::value, bool>::type
+  isnt(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
     using namespace TAP::details;
+
     try {
-      bool ret = 2 * fabs(left - right) / (fabs(left) + fabs(right)) > epsilon;
-      ok(ret, message);
-      return ret;
+      bool is_greater = 2 * fabs(left - right) / (fabs(left) + fabs(right)) > epsilon;
+      
+      return ok(is_greater, message);
     }
     catch(const std::exception& e) {
       fail(message);
       diag(failed_test_msg()," '", message, "'");
-      diag("Cought exception '", e.what(), "'");
+      diag("Caught exception '", e.what(), "'");
+
       return false;
     }
     catch(...) {
       fail(message);
       diag(failed_test_msg()," '", message, "'");
-      diag("Cought unknown exception");
+      diag("Caught unknown exception");
+
       return false;
     }
   }
 
-  template<typename T, typename U> bool is_convertible(const std::string& message) {
-    return ok(std::is_convertible<T, U>::value, message);
+  /* test whether type T may be converted to U */
+  template<typename T, typename U> bool is_convertible(const std::string& description) {
+    return ok(std::is_convertible<T, U>::value, description);
   }
 
-  template<typename T, typename U> bool is_inconvertible(const std::string& message) {
-    return ok(!std::is_convertible<T, U>::value, message);
+  /* deprecated. use isnt_convertible instead */
+  template<typename T, typename U> bool is_inconvertible(const std::string& description) {
+    return ok(!std::is_convertible<T, U>::value, description);
+  }
+
+  /* test whether type T may NOT be converted to U */
+  template<typename T, typename U> bool isnt_convertible(const std::string& description) {
+    return ok(!std::is_convertible<T, U>::value, description);
   }
 
   extern std::string TODO; 
 
   class todo_guard {
     const std::string value;
-    public:
+
+  public:
     todo_guard() noexcept;
     ~todo_guard() noexcept;
   };
@@ -267,15 +293,15 @@ namespace TAP {
  */
 #define TRY_OK(code, description) do {\
     try {\
-      action;\
-      TAP::pass(name);\
+      code;\
+      TAP::pass(description);\
     }\
     catch (const std::exception& e) {\
-      TAP::fail(name);\
+      TAP::fail(description);\
       TAP::note("Caught exception: ", e.what());\
     }\
     catch (...) {\
-      TAP::fail(name);\
+      TAP::fail(description);\
     }\
   } while (0)
 
@@ -287,16 +313,16 @@ namespace TAP {
  */
 #define TRY_NOT_OK(code, description) do {\
     try {\
-      action;\
-      TAP::fail(name);\
+      code;\
+      TAP::fail(description);\
       TAP::note("Expected an exception");\
     }\
     catch (const std::exception& e) {\
-      TAP::pass(name);\
+      TAP::pass(description);\
       TAP::note("Caught exception: ", e.what());\
     }\
     catch (...) {\
-      TAP::pass(name);\
+      TAP::pass(description);\
       TAP::note("Caught non-standard exception");\
     }\
   } while (0)

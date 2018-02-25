@@ -1,4 +1,4 @@
-version 1.2.0.0
+version 1.2.1.0
 
 # What is libtap++?
   libtap++ is a simple library providing a test harness to C++ programs of all sizes.
@@ -21,7 +21,7 @@ directed more to perl users than to C++ programmers. since I was looking
 for C++ projects, I decided to maintain libtap++ for myself.
 
   Since then my goals in maintaining it have matured into the following:
-1. to keep the code up to date with the C++11 standard
+1. ~~to keep the code up to date with the C++11 standard~~
 2. to keep the project conformant with the latest TAP specification (TAP 13)
 3. ~~to move the build process from a custom perl build to more "native" C++ build tools~~
 4. ~~to remove non-standard libraries (read: Boost) from the dependencies~~
@@ -64,15 +64,20 @@ otherwise, run `cmake .` in the project directory to get started
 after these steps, you can use make:
   ```shell
     make
-    make run_tests
+    make test
     sudo make install
   ```
+
+you can run more extensive tests by using `make debug` rather than `make test`.
+the output of the debug tests is also neater and more verbose. running these
+tests uses a shell script as a substitute for CTest
+
 ## Mac OS X
   Mac is not yet supported, as I do not have access to one for testing.
 the build process will probably be similar to that used by Ubuntu.
 
 ## Windows
-  Windows is being tested. instructions will be added soon (2-20-2018).
+  Windows is being tested. instructions will be added soon (2-23-2018).
 
 # Issues
   please contact me about building and testing for your system if it
