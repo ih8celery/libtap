@@ -4,6 +4,7 @@
 #include <cstdlib>
 
 namespace TAP {
+  const std::string _tap_version_info = "TAP version 13";
   /* 
    * initialized with the description of the current unimplemented test,
    * i.e. the todo test. empty string signals that test is normal 
@@ -15,13 +16,21 @@ namespace TAP {
    */
   const details::skip_all_type skip_all = details::skip_all_type();
   const details::no_plan_type no_plan = details::no_plan_type();
-
+  
+  /* private, unexported data belonging to TAP namespace */
   namespace {
+    using namespace details;
+
     unsigned expected = 0; // planned number of tests as initialized by plan()
     unsigned counter = 0; // count of all tests run so far
-    unsigned not_oks = 0; // count of tests which fail
-    
-    // TODO rename to todo_description()
+    unsigned not_oks = 0; // count of tests which have failed
+    Directive directive = Directive::NONE; // record current active; only one may be active at a time
+
+    // contains the scope and reason for current "special" directive,
+    // e.g. "SKIP" or "TODO"
+    std::pair<unsigned, std::string> directive_info;
+
+    // TODO deprecate 
     // and simply return TODO. initialize said variable with " # TODO " prepended
     std::string todo_test() noexcept {
       if (TODO.empty()) {
@@ -35,10 +44,11 @@ namespace TAP {
     /* are we currently in a test marked todo? */
     bool is_todo_test() noexcept { return !TODO.empty(); }
 
-    bool is_planned = false;
-    bool no_planned = false;
+    bool is_planned = false; // TODO rename, means plan has been set
+    bool no_planned = false; // TODO rename
     bool has_output_plan = false;
 
+    /* TODO rename to output_plan_info */
     void output_plan(unsigned tests, const std::string& extra = "") {
       if (has_output_plan) {
         throw fatal_exception("Can't print plan twice");
@@ -50,15 +60,19 @@ namespace TAP {
 
     inline void _done_testing(unsigned tests) {
       static bool is_done = false;
+      
       if (is_done) {
-        fail("done_testing() was already called"); // TODO replace call to fail with non-test fn
-        return;
+        throw fatal_exception("done_testing() was already called");
       }
-      is_done = true;
+      else {
+        is_done = true;
+      }
 
-      if (expected && tests != expected) {
-        // TODO unmix test output from error?
-        fail(std::string("planned to run ") + std::to_string(expected) + " tests but done_testing() expects " + std::to_string(tests));
+      if (expected != 0 && tests != expected) {
+        throw fatal_exception(std::string("planned to run ")
+                + std::to_string(expected)
+                + " tests but done_testing() expects " 
+                + std::to_string(tests));
       }
       else {
         expected = tests;
@@ -67,6 +81,36 @@ namespace TAP {
       if (!has_output_plan) {
         output_plan(tests);
       }
+    }
+  }
+
+  todo_guard::todo_guard() noexcept : value(TODO) {}
+  todo_guard::~todo_guard() noexcept { TODO = value; }
+  
+  // TODO delete this namespace
+  namespace details {
+    // TODO move
+    std::ostream* output = &std::cout;
+    std::ostream* error = &std::cout;
+
+    // TODO move
+    static std::stack<unsigned> block_expected;
+
+    // TODO move
+    void start_block(unsigned expected) noexcept {
+      block_expected.push(encountered() + expected);
+    }
+    // TODO move
+    unsigned stop_block() {
+      unsigned ret = block_expected.top();
+      block_expected.pop();
+
+      return ret;
+    }
+
+    // TODO delete
+    char const * failed_test_msg() noexcept {
+      return is_todo_test() ? "Failed (TODO) test" : "Failed test";
     }
   }
 
@@ -89,10 +133,12 @@ namespace TAP {
     no_planned = true;
   }
 
+  /* TODO replace inline fn */
   void done_testing() {
     _done_testing(encountered());
   }
 
+  /* TODO replace inline fn */
   void done_testing(unsigned tests) {
     no_planned = false;
     _done_testing(tests);
@@ -125,11 +171,13 @@ namespace TAP {
   }
 
   void bail_out(const std::string& reason) {
-    *details::output << "Bail out!  " << reason << std::endl;
+    *details::output << "Bail out! " << reason << std::endl;
 
     std::exit(255); // does not unwind stack!
   }
 
+  // TODO reimplement to use separator var, description <- message,
+  // test for current directive
   bool ok(bool is_ok, const std::string& message) {
     *details::output << (is_ok ? "ok " : "not ok ") << ++counter; 
     *details::output << " - " << message << todo_test()  << std::endl;
@@ -151,10 +199,18 @@ namespace TAP {
     return ok(false, message);
   }
 
+  // mark the next num tests with skip directive
+  // TODO implement correct skip
   void skip(unsigned num, const std::string& reason) {
     for(unsigned i = 0; i < num; ++i) {
       pass(" # skip " + reason);
     }
+  }
+  
+  // mark the next test with skip directive
+  // TODO implement correct skip
+  void skip(const std::string& reason) {
+    throw details::Skip_exception(reason);
   }
 
   void set_output(std::ostream& new_output) {
@@ -169,35 +225,8 @@ namespace TAP {
     }
     details::error = &new_error;
   }
-
-  todo_guard::todo_guard() noexcept : value(TODO) {}
-  todo_guard::~todo_guard() noexcept { TODO = value; }
   
-  namespace details {
-    std::ostream* output = &std::cout;
-    std::ostream* error = &std::cout;
-
-    static std::stack<unsigned> block_expected;
-
-    void start_block(unsigned expected) noexcept {
-      block_expected.push(encountered() + expected);
-    }
-    unsigned stop_block() {
-      unsigned ret = block_expected.top();
-      block_expected.pop();
-
-      return ret;
-    }
-
-    char const * failed_test_msg() noexcept {
-      return is_todo_test() ? "Failed (TODO) test" : "Failed test";
-    }
-
-  }
-  
-  void skip(const std::string& reason) {
-    throw details::Skip_exception(reason);
-  }
+  /* deprecated. a test may not have more than one directive */
   void skip_todo(const std::string& reason) {
     throw details::Todo_exception(reason);
   }

@@ -6,31 +6,43 @@
 #include <type_traits>
 #include <cmath>
 
+/* a sequence of tests runs in an implicit block with none of the
+ * protections of an explicit block
+ * a whole block is seen individually as a test whose result indicates
+ * failure or success. 0 means success, 1-255 means failure
+ * adding a block pushes its plan onto stack, TAP::planned() retrieves top of stack
+ * the default plan size is zero
+ * TODO SKIP macro skips all remaining tests in block*/
 namespace TAP {
   namespace details {
-    struct skip_all_type {};
-    struct no_plan_type {};
+    enum class Directive { NONE, SKIP, TODO };
+    struct skip_all_type {}; // TODO move to TAP::
+    struct no_plan_type {}; // TODO move to TAP::
 
-    extern std::ostream* output;
-    extern std::ostream* error;
+    extern std::ostream* output; // TODO move to private namespace
+    extern std::ostream* error; // TODO same
 
     // Return the variant of "Failed test" or "Failed
     // (TODO) test" required by whether the current test is
     // a todo test
-    char const * failed_test_msg() throw();
+    char const * failed_test_msg() throw(); // TODO delete
   }
+
+  // TODO move implmn to source
   class fatal_exception : public std::exception {
     std::string message;
 
     public:
-    fatal_exception(const std::string& _message) : message(_message) {
-    }
+    fatal_exception(const std::string& _message) : message(_message) {}
+
     const char* what() const noexcept override {
       return message.c_str();
     }
+
     ~fatal_exception() noexcept override {}
   };
   
+  // TODO constants in TAP::, not in include
   extern const details::skip_all_type skip_all;
   extern const details::no_plan_type no_plan;
 
@@ -44,21 +56,24 @@ namespace TAP {
   unsigned planned() noexcept;
   unsigned encountered() noexcept;
 
-  bool ok(bool, const std::string& = "");
-  bool not_ok(bool, const std::string& = "");
+  bool ok(bool, const std::string& = ""); // consider deprecating in favor of no default arg
+  bool not_ok(bool, const std::string& = ""); // consider deprecating in favor of no default arg
 
-  bool pass(const std::string& = "");
-  bool fail(const std::string& = "");
+  bool pass(const std::string& = ""); // consider deprecating in favor of no default arg
+  bool fail(const std::string& = ""); // consider deprecating in favor of no default arg
 
-  void skip(unsigned, const std::string& = "");
+  // skips the next n tests for reason given by string arg
+  // TODO check that impln uses skip counter
+  void skip(unsigned, const std::string& = ""); // consider deprecating in favor of no default arg
   void bail_out(const std::string& reason);
 
-  int exit_status();
-  bool summary() noexcept;
+  int exit_status(); // TODO rename to test_status, usable at any time by harness to gather stats?
+  bool summary() noexcept; // TODO return tuple to harness?
 
   void set_output(std::ostream&);
   void set_error(std::ostream&); 
-
+  
+  // {
   template<typename T>
   void diag(const T& first) {
     *details::error << "# " << first << std::endl;
@@ -79,7 +94,8 @@ namespace TAP {
   void diag(const T1& first, const T2& second, const T3& third, const T4& fourth, const T5& fifth) {
     *details::error << "# " << first << second << third << fourth << fifth << std::endl;
   }
-
+  // }
+  // {
   template<typename T>
   void note(const T& first) {
     *details::output << "# " << first << std::endl;
@@ -100,22 +116,16 @@ namespace TAP {
   void note(const T1& first, const T2& second, const T3& third, const T4& fourth, const T5& fifth) {
     *details::output << "# " << first << second << third << fourth << fifth << std::endl;
   }
+  // }
 
   template<typename T, typename U> 
   typename std::enable_if<!std::is_floating_point<U>::value, bool>::type 
   is(const T& left, const U& right, const std::string& description = "") {
     using namespace TAP::details;
 
+    bool is_ok = false;
     try {
-      bool is_ok = ok(left == right, description);
-
-      if (!is_ok) { // TODO is this messaging required by TAP13? if so, apply to below as well
-        diag(failed_test_msg()," '", description, "'");
-        diag("       Got: ", left);
-        diag("  Expected: ", right);
-      }
-
-      return is_ok;
+      is_ok = ok(left == right, description);
     }
     catch(const std::exception& e) {
       fail(description);
@@ -135,6 +145,14 @@ namespace TAP {
 
       return false;
     }
+
+    if (!is_ok) { // TODO is this messaging required by TAP13? if so, apply to below as well
+      diag(failed_test_msg()," '", description, "'");
+      diag("       Got: ", left);
+      diag("  Expected: ", right);
+    }
+
+    return is_ok;
   }
 
   template<typename T, typename U>
@@ -164,16 +182,9 @@ namespace TAP {
   is(const T& left, const U& right, const std::string& description = "", double epsilon = 0.01) {
     using namespace TAP::details;
 
+    bool is_ok = false;
     try {
-      bool is_ok = ok(2 * fabs(left - right) / (fabs(left) + fabs(right)) < epsilon);
-
-      if (!is_ok) {
-        diag(failed_test_msg()," '", description, "'");
-        diag("       Got: ", left);
-        diag("  Expected: ", right);
-      }
-
-      return is_ok;
+      is_ok = ok(2 * fabs(left - right) / (fabs(left) + fabs(right)) < epsilon);
     }
     catch(const std::exception& e) {
       fail(description);
@@ -193,6 +204,14 @@ namespace TAP {
 
       return false;
     }
+    
+    if (!is_ok) {
+      diag(failed_test_msg()," '", description, "'");
+      diag("       Got: ", left);
+      diag("  Expected: ", right);
+    }
+
+    return is_ok;
   }
 
   template<typename T, typename U>
@@ -221,7 +240,6 @@ namespace TAP {
     }
   }
 
-  /* test whether type T may be converted to U */
   template<typename T, typename U> bool is_convertible(const std::string& description) {
     return ok(std::is_convertible<T, U>::value, description);
   }
@@ -231,13 +249,14 @@ namespace TAP {
     return ok(!std::is_convertible<T, U>::value, description);
   }
 
-  /* test whether type T may NOT be converted to U */
   template<typename T, typename U> bool isnt_convertible(const std::string& description) {
     return ok(!std::is_convertible<T, U>::value, description);
   }
 
   extern std::string TODO; 
 
+  /* saves the value of TODO temporarily */
+  // TODO replace with variable?
   class todo_guard {
     const std::string value;
 
@@ -263,7 +282,6 @@ namespace TAP {
 
     void start_block(unsigned) noexcept;
     unsigned stop_block();
-
   }
 
   void skip(const std::string& reason);
@@ -380,36 +398,30 @@ namespace TAP {
     return TAP::exit_status();\
   }
 
-/*
- * TODO document
- */
 #define BLOCK_START(planned) \
   try {\
-    todo_guard foo##planned;\
+    todo_guard foo##planned;\ // TODO remove
     TAP::details::start_block(planned);
 
-/*
- * TODO document
- */
 #define BLOCK_END \
     if (TAP::encountered() != TAP::details::stop_block()) {\
-      TODO::note("Not enough tests for plan!");\
+      TAP::note("Not enough tests for plan!");\
     }\
   }\
   catch(TAP::details::Skip_exception& skipper) {\
     TAP::skip(TAP::details::stop_block() - TAP::encountered(), skipper.reason);\
   }\
   catch(TAP::details::Todo_exception& todoer) {\
-    TODO::note("Todo tests not implemented yet");\
+    TAP::note("Todo tests not implemented yet");\
     /*TODO*/\
   }\
   catch(const std::exception& e) {\
     TAP::fail(_current_message);\
-    TODO::note("Got error: ", e.what());\
+    TAP::note("Got error: ", e.what());\
   }\
   catch (...) {\
     TAP::fail(_current_message);\
-    TODO::note("Died with some mysterious error");\
+    TAP::note("Died with some mysterious error");\
   }
 
 /* This small macro is a main reason for this ugly exercise. I can't introduce a new scope because
