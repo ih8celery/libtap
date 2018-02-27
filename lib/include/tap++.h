@@ -6,49 +6,89 @@
 #include <type_traits>
 #include <cmath>
 
+#define FLOAT_CMP(left, right, e) (2 * fabs((left) - (right)) / (fabs(left) + fabs(right)) > (e))
+
+#define ok(condition, description) do {\
+  if (TAP::get_finished_testing()) {\
+    throw fatal_exception(std::string("testing has finished; no new tests allowed"));\
+  }\
+  if (TAP::get_directive() == TAP::details::Directive::NONE) {\
+    TAP::details::test_status = TAP::_ok((condition), (description));\
+  }\
+  else if (TAP::get_directive() == TAP::details::Directive::SKIP) {\
+    TAP::details::test_status = TAP::_ok(true, (description));\
+  }\
+  else {\
+    TAP::details::test_status = TAP::_ok(false, (description));\
+  }\
+} while (0)
+
+#define not_ok(condition, description) do {\
+  if (TAP::get_finished_testing()) {\
+    throw fatal_exception(std::string("testing has finished; no new tests allowed"));\
+  }\
+  if (TAP::get_directive() == TAP::details::Directive::NONE) {\
+    TAP::details::test_status = TAP::_ok(!(condition), (description));\
+  }\
+  else if (TAP::get_directive() == TAP::details::Directive::SKIP) {\
+    TAP::details::test_status = TAP::_ok(true, (description));\
+  }\
+  else {\
+    TAP::details::test_status = TAP::_ok(false, (description));\
+  }\
+} while (0)
+
+// TODO implement structs no_plan_t, skip_all_t, todo_all_t for plan() overloads 
+
 /* a sequence of tests runs in an implicit block with none of the
  * protections of an explicit block
  * a whole block is seen individually as a test whose result indicates
  * failure or success. 0 means success, 1-255 means failure
  * adding a block pushes its plan onto stack, TAP::planned() retrieves top of stack
  * the default plan size is zero
+ * TODO 'TODO' macro marks all remaining tests in block
  * TODO SKIP macro skips all remaining tests in block*/
 namespace TAP {
   namespace details {
     enum class Directive { NONE, SKIP, TODO };
-    struct skip_all_type {}; // TODO move to TAP::
-    struct no_plan_type {}; // TODO move to TAP::
 
-    extern std::ostream* output; // TODO move to private namespace
-    extern std::ostream* error; // TODO same
+    struct Test_State;
 
-    // Return the variant of "Failed test" or "Failed
-    // (TODO) test" required by whether the current test is
-    // a todo test
-    char const * failed_test_msg() throw(); // TODO delete
+    struct no_plan_t;
+    struct skip_all_t;
+    struct todo_all_t;
+
+    extern bool test_status;
+    extern const char * separator;
   }
 
-  // TODO move implmn to source
   class fatal_exception : public std::exception {
-    std::string message;
+    std::string msg;
 
     public:
-    fatal_exception(const std::string& _message) : message(_message) {}
+      fatal_exception(std::string _msg) : msg(_msg) {}
+      ~fatal_exception() = default;
 
-    const char* what() const noexcept override {
-      return message.c_str();
-    }
-
-    ~fatal_exception() noexcept override {}
+      const char * what() const noexcept override { return msg.c_str(); }
   };
-  
-  // TODO constants in TAP::, not in include
-  extern const details::skip_all_type skip_all;
-  extern const details::no_plan_type no_plan;
 
+  namespace {
+    std::ostream* output = &std::cout;
+    std::ostream* error = &std::cerr;
+
+    extern bool has_finished_testing;
+  }
+
+  details::Directive get_directive();
+
+  bool get_finished_testing();
+
+  bool _ok(bool, const std::string& = "");
+
+  void plan(const details::no_plan_t&);
+  void plan(const details::skip_all_t&);
+  void plan(const details::todo_all_t&);
   void plan(unsigned);
-  void plan(const details::skip_all_type&, const std::string& = "");
-  void plan(const details::no_plan_type&) noexcept;
 
   void done_testing();
   void done_testing(unsigned);
@@ -56,238 +96,181 @@ namespace TAP {
   unsigned planned() noexcept;
   unsigned encountered() noexcept;
 
-  bool ok(bool, const std::string& = ""); // consider deprecating in favor of no default arg
-  bool not_ok(bool, const std::string& = ""); // consider deprecating in favor of no default arg
+  void pass(const std::string& = "");
+  void fail(const std::string& = "");
 
-  bool pass(const std::string& = ""); // consider deprecating in favor of no default arg
-  bool fail(const std::string& = ""); // consider deprecating in favor of no default arg
+  void skip(unsigned, const std::string& = "");
+  void skip(const std::string& = "");
 
-  // skips the next n tests for reason given by string arg
-  // TODO check that impln uses skip counter
-  void skip(unsigned, const std::string& = ""); // consider deprecating in favor of no default arg
+  void todo(unsigned, const std::string& = "");
+  void todo(const std::string& = "");
+
   void bail_out(const std::string& reason);
 
-  int exit_status(); // TODO rename to test_status, usable at any time by harness to gather stats?
-  bool summary() noexcept; // TODO return tuple to harness?
+  int exit_status();
+  bool summary() noexcept;
 
   void set_output(std::ostream&);
   void set_error(std::ostream&); 
   
-  // {
+  // diagnostic templates {
   template<typename T>
   void diag(const T& first) {
-    *details::error << "# " << first << std::endl;
+    *error << "# " << first << std::endl;
   }
   template<typename T1, typename T2>
   void diag(const T1& first, const T2& second) {
-    *details::error << "# " << first << second << std::endl;
+    *error << "# " << first << second << std::endl;
   }
   template<typename T1, typename T2, typename T3>
   void diag(const T1& first, const T2& second, const T3& third) {
-    *details::error << "# " << first << second << third << std::endl;
+    *error << "# " << first << second << third << std::endl;
   }
   template<typename T1, typename T2, typename T3, typename T4>
   void diag(const T1& first, const T2& second, const T3& third, const T4& fourth) {
-    *details::error << "# " << first << second << third << fourth << std::endl;
+    *error << "# " << first << second << third << fourth << std::endl;
   }
   template<typename T1, typename T2, typename T3, typename T4, typename T5>
   void diag(const T1& first, const T2& second, const T3& third, const T4& fourth, const T5& fifth) {
-    *details::error << "# " << first << second << third << fourth << fifth << std::endl;
+    *error << "# " << first << second << third << fourth << fifth << std::endl;
   }
   // }
-  // {
+  // comment templates {
   template<typename T>
   void note(const T& first) {
-    *details::output << "# " << first << std::endl;
+    *output << "# " << first << std::endl;
   }
   template<typename T1, typename T2>
   void note(const T1& first, const T2& second) {
-    *details::output << "# " << first << second << std::endl;
+    *output << "# " << first << second << std::endl;
   }
   template<typename T1, typename T2, typename T3>
   void note(const T1& first, const T2& second, const T3& third) {
-    *details::output << "# " << first << second << third << std::endl;
+    *output << "# " << first << second << third << std::endl;
   }
   template<typename T1, typename T2, typename T3, typename T4> 
   void note(const T1& first, const T2& second, const T3& third, const T4& fourth) {
-    *details::output << "# " << first << second << third << fourth << std::endl;
+    *output << "# " << first << second << third << fourth << std::endl;
   }
   template<typename T1, typename T2, typename T3, typename T4, typename T5> 
   void note(const T1& first, const T2& second, const T3& third, const T4& fourth, const T5& fifth) {
-    *details::output << "# " << first << second << third << fourth << fifth << std::endl;
+    *output << "# " << first << second << third << fourth << fifth << std::endl;
   }
   // }
 
+  // is_* family of templates {
   template<typename T, typename U> 
-  typename std::enable_if<!std::is_floating_point<U>::value, bool>::type 
+  typename std::enable_if<!std::is_floating_point<U>::value, void>::type 
   is(const T& left, const U& right, const std::string& description = "") {
-    using namespace TAP::details;
-
-    bool is_ok = false;
     try {
-      is_ok = ok(left == right, description);
+      ok(left == right, description);
     }
     catch(const std::exception& e) {
       fail(description);
-      diag(failed_test_msg()," '", description, "'");
+      diag("Test failed"," '", description, "'");
       diag("Caught exception '", e.what(), "'");
       diag("       Got: ", left);
       diag("  Expected: ", right);
-
-      return false;
     }
     catch(...) {
       fail(description);
-      diag(failed_test_msg()," '", description, "'");
+      diag("Test failed"," '", description, "'");
       diag("Caught unknown exception");
       diag("       Got: ", left);
       diag("  Expected: ", right);
-
-      return false;
     }
 
-    if (!is_ok) { // TODO is this messaging required by TAP13? if so, apply to below as well
-      diag(failed_test_msg()," '", description, "'");
+    if (!TAP::details::test_status) { // TODO is this messaging required by TAP13?
+      diag("Test failed"," '", description, "'");
       diag("       Got: ", left);
       diag("  Expected: ", right);
     }
-
-    return is_ok;
   }
 
   template<typename T, typename U>
-  typename std::enable_if<!std::is_floating_point<U>::value, bool>::type
+  typename std::enable_if<!std::is_floating_point<U>::value, void>::type
   isnt(const T& left, const U& right, const std::string& description = "") {
     try {
-      return ok(left != right, description);
+      ok(left != right, description);
     }
     catch(const std::exception& e) {
       fail(description);
       diag("In test ", description);
       diag("Caught exception: ", e.what());
-
-      return false;
     }
     catch(...) {
       fail(description);
       diag("In test ", description);
       diag("Caught unknown exception");
-
-      return false;
     }
   }
 
   template<typename T, typename U>
-  typename std::enable_if<std::is_floating_point<U>::value, bool>::type
+  typename std::enable_if<std::is_floating_point<U>::value, void>::type
   is(const T& left, const U& right, const std::string& description = "", double epsilon = 0.01) {
-    using namespace TAP::details;
-
-    bool is_ok = false;
     try {
-      is_ok = ok(2 * fabs(left - right) / (fabs(left) + fabs(right)) < epsilon);
+      ok(FLOAT_CMP(left, right, epsilon), description);
     }
     catch(const std::exception& e) {
       fail(description);
-      diag(failed_test_msg()," '", description, "'");
+      diag("Test failed"," '", description, "'");
       diag("Caught exception '", e.what(), "'");
       diag("       Got: ", left);
       diag("  Expected: ", right);
-
-      return false;
     }
     catch(...) {
       fail(description);
-      diag(failed_test_msg()," '", description, "'");
+      diag("Test failed"," '", description, "'");
       diag("Caught unknown exception");
       diag("       Got: ", left);
       diag("  Expected: ", right);
-
-      return false;
     }
     
-    if (!is_ok) {
-      diag(failed_test_msg()," '", description, "'");
+    if (!TAP::details::test_status) {
+      diag("Test failed"," '", description, "'");
       diag("       Got: ", left);
       diag("  Expected: ", right);
     }
-
-    return is_ok;
   }
 
   template<typename T, typename U>
-  typename std::enable_if<std::is_floating_point<U>::value, bool>::type
+  typename std::enable_if<std::is_floating_point<U>::value, void>::type
   isnt(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
-    using namespace TAP::details;
-
     try {
-      bool is_greater = 2 * fabs(left - right) / (fabs(left) + fabs(right)) > epsilon;
-      
-      return ok(is_greater, message);
+      ok(FLOAT_CMP(left, right, epsilon), message);
     }
     catch(const std::exception& e) {
       fail(message);
-      diag(failed_test_msg()," '", message, "'");
+      diag("Test failed"," '", message, "'");
       diag("Caught exception '", e.what(), "'");
 
       return false;
     }
     catch(...) {
       fail(message);
-      diag(failed_test_msg()," '", message, "'");
+      diag("Test failed"," '", message, "'");
       diag("Caught unknown exception");
 
       return false;
     }
   }
 
-  template<typename T, typename U> bool is_convertible(const std::string& description) {
-    return ok(std::is_convertible<T, U>::value, description);
+  template<typename T, typename U> void is_convertible(const std::string& description) {
+    _ok(std::is_convertible<T, U>::value, description);
   }
 
   /* deprecated. use isnt_convertible instead */
-  template<typename T, typename U> bool is_inconvertible(const std::string& description) {
-    return ok(!std::is_convertible<T, U>::value, description);
+  template<typename T, typename U> void is_inconvertible(const std::string& description) {
+    _ok(!std::is_convertible<T, U>::value, description);
   }
 
-  template<typename T, typename U> bool isnt_convertible(const std::string& description) {
-    return ok(!std::is_convertible<T, U>::value, description);
+  template<typename T, typename U> void isnt_convertible(const std::string& description) {
+    _ok(!std::is_convertible<T, U>::value, description);
   }
-
-  extern std::string TODO; 
-
-  /* saves the value of TODO temporarily */
-  // TODO replace with variable?
-  class todo_guard {
-    const std::string value;
-
-  public:
-    todo_guard() noexcept;
-    ~todo_guard() noexcept;
-  };
+  // }
 }
 
-#ifdef WANT_TEST_EXTRAS
-
-namespace TAP {
-  namespace details {
-    struct Skip_exception {
-      const std::string reason;
-      Skip_exception(const std::string& _reason) noexcept : reason(_reason) {}
-    };
-
-    struct Todo_exception {
-      const std::string reason;
-      Todo_exception(const std::string& _reason) noexcept : reason(_reason) {}
-    };
-
-    void start_block(unsigned) noexcept;
-    unsigned stop_block();
-  }
-
-  void skip(const std::string& reason);
-  void skip_todo(const std::string& reason);
-}
-
+#ifdef WANT_TEST_EXTRAS // {
 /* deprecated. use TRY_OK instead */
 #define TRY(action, name) do {\
     try {\
@@ -398,11 +381,39 @@ namespace TAP {
     return TAP::exit_status();\
   }
 
+/* declare named group of tests */
+#define SUBTEST(planned, name) \
+  TAP::plan(planned, name);
+
+/* 
+ * start anonymous group of tests or continue current group if it has
+ * not yet run any tests 
+ */
+#define DO \
+  TAP::plan();\
+  try {
+
+/* conclude a group of tests begun by DO */
+#define END \
+    if (TAP::encountered() != TAP::planned()) {\
+      TODO::diag("fewer tests than planned");\
+    }\
+    TAP::done_testing();\
+  }\
+  catch (const TAP::fatal_exception& e) {\
+    IGNORE("TAP error preventing tests from running");\
+  }
+
+// TODO IGNORE macro announces that n tests will be skipped without
+// running them
+
+/* deprecated. use SUBTEST and DO instead */
 #define BLOCK_START(planned) \
   try {\
-    todo_guard foo##planned;\ // TODO remove
+    todo_guard foo##planned;\
     TAP::details::start_block(planned);
 
+/* deprecated. use END instead */
 #define BLOCK_END \
     if (TAP::encountered() != TAP::details::stop_block()) {\
       TAP::note("Not enough tests for plan!");\
@@ -435,5 +446,6 @@ namespace TAP {
   _current_message = NULL
 
 #endif /*WANT_TEST_EXTRAS*/
+// }
 
 #endif /*LIB_TAPPP_TAPPP_H*/
