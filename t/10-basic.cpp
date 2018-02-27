@@ -11,7 +11,7 @@
 using namespace TAP;
 
 int main() {
-  plan(8);
+  plan(6);
 
   ok(1+1 == 2, "1+1 == 2");
 

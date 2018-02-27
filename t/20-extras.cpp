@@ -10,13 +10,13 @@
 using namespace TAP;
 
 int main() {
-  TEST_START(2);
+  plan(1);
 
   TRY_NOT_OK(throw 1, "throws an exception");
 
-  TRY_DECL(int age = 5, "declare age to be 5");
+  //TRY_DECL(int age = 5, "declare age to be 5");
 
-  TEST_END;
+  done_testing();
 
-  return 0;
+  return exit_status();
 }
