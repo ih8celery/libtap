@@ -1,10 +1,11 @@
-version 1.2.1.0
+version 2.0.0
 
 # What is libtap++?
-  libtap++ is a simple library providing a test harness to C++ programs of all sizes.
-it conforms to the Test Anything Protocol (TAP for short) originally created for
-perl. see the current TAP specification [here](https://testanything.org/tap-version-13-specification.html) to find
-out what TAP is all about. 
+  libtap++ is a simple library providing a test protocol (not a harness)
+to C++ programs of all sizes. it conforms to the Test Anything Protocol
+(TAP for short) originally created for perl. see the current TAP 
+specification [here](https://testanything.org/tap-version-13-specification.html) to find out 
+what TAP is all about. 
 
   libtap++ was created by [Leon Timmermans](https://github.com/Leont); the code hosted here is a
 maintenance version developed to address some problems in the original implementation.
@@ -39,7 +40,7 @@ written by Leon Timmermans in POD format.
 
 ## Usage Notes
   TAP is delivered to you in the TAP namespace, which is generally
-safe to `use`.
+safe with `using` declarations.
 
   the test extras are accessible by `#define`ing WANT\_TEST\_EXTRAS
 before including the header.
@@ -77,7 +78,7 @@ tests uses a shell script as a substitute for CTest
 the build process will probably be similar to that used by Ubuntu.
 
 ## Windows
-  Windows is being tested. instructions will be added soon (2-23-2018).
+  Windows is being tested. instructions will be added soon (2-25-2018).
 
 # Issues
   please contact me about building and testing for your system if it
