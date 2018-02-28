@@ -11,7 +11,7 @@
 using namespace TAP;
 
 int main() {
-  plan(6);
+  plan(7);
 
   ok(1+1 == 2, "1+1 == 2");
 
@@ -21,15 +21,16 @@ int main() {
 
   ok(1, "simply test truthiness of 1");
 
+  todo("develop better test of isnt");
   isnt(1, 2, "1 is not the same as 2");
+
+  is(1.0, 1.0, "1.0 is 1.0");
 
   pass("wunderbar! this test passed");
 
   fail("this test should fail");
 
-  note("TAP internally keeps track of the number of tests it expects to find");
-
   done_testing();
 
-  return 0;
+  return exit_status();
 }
