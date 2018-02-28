@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <cmath>
 
-#define FLOAT_CMP(left, right, e) (2 * fabs((left) - (right)) / (fabs(left) + fabs(right)) > (e))
+#define FLOAT_CMP(left, right, e) (2 * fabs(double(left) - double(right)) / (fabs(double(left)) + fabs(double(right))) > (e))
 
 #define ok(condition, description) do {\
   if (TAP::get_finished_testing()) {\
@@ -79,16 +79,20 @@ namespace TAP {
     extern bool has_finished_testing;
   }
 
+  extern const details::no_plan_t no_plan;
+  extern const details::skip_all_t skip_all;
+  extern const details::todo_all_t todo_all;
+
   details::Directive get_directive();
 
   bool get_finished_testing();
 
   bool _ok(bool, const std::string& = "");
 
-  void plan(const details::no_plan_t&);
-  void plan(const details::skip_all_t&);
-  void plan(const details::todo_all_t&);
-  void plan(unsigned);
+  void plan(const details::no_plan_t&, const std::string& = "");
+  void plan(const details::skip_all_t&, const std::string& = "");
+  void plan(const details::todo_all_t&, const std::string& = "");
+  void plan(unsigned, const std::string& = "");
 
   void done_testing();
   void done_testing(unsigned);
@@ -271,26 +275,9 @@ namespace TAP {
 }
 
 #ifdef WANT_TEST_EXTRAS // {
-/* deprecated. use TRY_OK instead */
-#define TRY(action, name) do {\
-    try {\
-      action;\
-      TAP::pass(name);\
-    }\
-    catch (const std::exception& e) {\
-      TAP::fail(name);\
-      TAP::note("Caught exception: ", e.what());\
-    }\
-    catch (...) {\
-      TAP::fail(name);\
-    }\
-  } while (0)
-
 /* 
  * exception-handling analogue to TAP::ok, where code that throws an
  * exception fails the test
- * 
- * NOTE: creates a new scope for try/catch block
  */
 #define TRY_OK(code, description) do {\
     try {\
@@ -309,8 +296,6 @@ namespace TAP {
 /*
  * exception-handling analogue to TAP::not_ok, where code that does
  * NOT throw an exception fails the test
- * 
- * NOTE: creates a new scope for try/catch block
  */
 #define TRY_NOT_OK(code, description) do {\
     try {\
@@ -325,17 +310,6 @@ namespace TAP {
     catch (...) {\
       TAP::pass(description);\
       TAP::note("Caught non-standard exception");\
-    }\
-  } while (0)
-
-/* deprecated. use TRY_NOT_OK instead */
-#define FAIL(action, name) do {\
-    try {\
-      action;\
-      TAP::fail(name);\
-    }\
-    catch (...) {\
-      TAP::pass(name);\
     }\
   } while (0)
 
@@ -390,49 +364,15 @@ namespace TAP {
  * not yet run any tests 
  */
 #define DO \
-  TAP::plan();\
+  TAP::plan(TAP::no_plan);\
   try {
 
 /* conclude a group of tests begun by DO */
 #define END \
-    if (TAP::encountered() != TAP::planned()) {\
-      TODO::diag("fewer tests than planned");\
-    }\
     TAP::done_testing();\
   }\
   catch (const TAP::fatal_exception& e) {\
-    IGNORE("TAP error preventing tests from running");\
-  }
-
-// TODO IGNORE macro announces that n tests will be skipped without
-// running them
-
-/* deprecated. use SUBTEST and DO instead */
-#define BLOCK_START(planned) \
-  try {\
-    todo_guard foo##planned;\
-    TAP::details::start_block(planned);
-
-/* deprecated. use END instead */
-#define BLOCK_END \
-    if (TAP::encountered() != TAP::details::stop_block()) {\
-      TAP::note("Not enough tests for plan!");\
-    }\
-  }\
-  catch(TAP::details::Skip_exception& skipper) {\
-    TAP::skip(TAP::details::stop_block() - TAP::encountered(), skipper.reason);\
-  }\
-  catch(TAP::details::Todo_exception& todoer) {\
-    TAP::note("Todo tests not implemented yet");\
-    /*TODO*/\
-  }\
-  catch(const std::exception& e) {\
-    TAP::fail(_current_message);\
-    TAP::note("Got error: ", e.what());\
-  }\
-  catch (...) {\
-    TAP::fail(_current_message);\
-    TAP::note("Died with some mysterious error");\
+    TAP::diag("TAP error found while running subtest");\
   }
 
 /* This small macro is a main reason for this ugly exercise. I can't introduce a new scope because
