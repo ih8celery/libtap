@@ -1,4 +1,4 @@
-version 2.0.0
+version 0.2.0
 
 # What is libtap++?
   libtap++ is a simple library providing a test protocol (not a harness)
