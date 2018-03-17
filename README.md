@@ -21,18 +21,6 @@ that the codebase was out-of-date, tied to two unrelated projects, and
 directed more to perl users than to C++ programmers. since I was looking
 for C++ projects, I decided to maintain libtap++ for myself.
 
-  Since then my goals in maintaining it have matured into the following:
-1. ~~to keep the code up to date with the C++11 standard~~
-2. to keep the project conformant with the latest TAP specification (TAP 13)
-3. ~~to move the build process from a custom perl build to more "native" C++ build tools~~
-4. ~~to remove non-standard libraries (read: Boost) from the dependencies~~
-5. to develop and test libtap++ for multiple platforms
-6. to improve the documentation
-7. to develop non-TAP extensions that advantageously employ C++ features.
-
-  I believe TAP is an important innovation in testing that C++ programmers should
-be able to enjoy--on their own terms.
-
 # Where to Read More
   as development continues, [userman](./doc/userman.md) will be updated with complete 
 information about all parts of the project. this document was originally
@@ -53,7 +41,7 @@ CMake >= 3.0
 
 # Installation
 
-## Ubuntu
+## Ubuntu/Debian
   I recommend you do an out-source cmake build. to do this, start with
 the following in your shell from the project directory:
   ```shell
@@ -78,7 +66,7 @@ tests uses a shell script as a substitute for CTest
 the build process will probably be similar to that used by Ubuntu.
 
 ## Windows
-  Windows is being tested. instructions will be added soon (2-25-2018).
+  No support for Windows.
 
 # Issues
   please contact me about building and testing for your system if it
