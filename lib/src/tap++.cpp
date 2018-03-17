@@ -2,203 +2,425 @@
 #include "tap++.h"
 #include <stack>
 #include <cstdlib>
+#include <utility>
 
 namespace TAP {
-  /* 
-   * initialized with the description of the current unimplemented test,
-   * i.e. the todo test. empty string signals that test is normal 
-   */
-  std::string TODO = "";
+  const std::string _tap_version_info = "TAP version 13";
 
-  /*
-   * constants used in invoking special behavior from plan function
-   */
-  const details::skip_all_type skip_all = details::skip_all_type();
-  const details::no_plan_type no_plan = details::no_plan_type();
+  namespace details {
+    bool test_status = true;
 
+    const char * separator = " - ";
+
+    struct Test_State {
+      Test_State() : expected(0), found(0), 
+                     failed(0), has_plan(false),
+                     directive(Directive::NONE), directive_extent(-1),
+                     directive_reason() {}
+      // initialize test with non-default number of test functions
+      Test_State(unsigned n, bool t) : expected(n), found(0),
+                                       failed(0), has_plan(t),
+                                       directive(Directive::NONE),
+                                       directive_extent(-1),
+                                       directive_reason() {}
+      // initialize test with non-default directive
+      Test_State(unsigned n, bool t, Directive d, int i, std::string s) :
+            expected(n), found(0), failed(0), has_plan(t), directive(d),
+            directive_extent(i), directive_reason(s) {}
+
+      unsigned expected;
+      unsigned found;
+      unsigned failed;
+      Directive directive;
+      int directive_extent;
+      std::string directive_reason;
+      bool has_plan;
+    };
+
+    struct no_plan_t {};
+    struct skip_all_t {};
+    struct todo_all_t {};
+
+    constexpr std::stack<Test_State>::size_type subtest_limit = 3;
+  }
+  
   namespace {
-    unsigned expected = 0; // planned number of tests as initialized by plan()
-    unsigned counter = 0; // count of all tests run so far
-    unsigned not_oks = 0; // count of tests which fail
-    
-    // TODO rename to todo_description()
-    // and simply return TODO. initialize said variable with " # TODO " prepended
-    std::string todo_test() noexcept {
-      if (TODO.empty()) {
-        return TODO;
+    std::stack<details::Test_State> saved_tests;
+    details::Test_State current_test;
+
+    bool has_finished_testing = false;
+  }
+
+  const details::no_plan_t  no_plan  = details::no_plan_t();
+  const details::skip_all_t skip_all = details::skip_all_t();
+  const details::todo_all_t todo_all = details::todo_all_t();
+
+  details::Directive get_directive() {
+    return current_test.directive;
+  }
+
+  bool get_finished_testing() {
+    return has_finished_testing;
+  }
+
+  bool _ok(bool condition, const std::string& description) {
+    current_test.found++;
+
+    if (current_test.directive == details::Directive::SKIP && current_test.directive_extent != 0) {
+      *output << std::string(4 * saved_tests.size(), ' ') << "ok " << current_test.found << details::separator;
+      *output << description << " # SKIP " << current_test.directive_reason << std::endl;
+
+      current_test.directive_extent--;
+
+      if (current_test.directive_extent == 0) {
+        current_test.directive = details::Directive::NONE;
+        current_test.directive_extent = -1;
+      }
+    }
+    else if (current_test.directive == details::Directive::TODO && current_test.directive_extent != 0) {
+      *output << std::string(4 * saved_tests.size(), ' ') << "not ok " << current_test.found << details::separator;
+      *output << description << " # TODO " << current_test.directive_reason << std::endl;
+
+      current_test.directive_extent--;
+
+      if (current_test.directive_extent == 0) {
+        current_test.directive = details::Directive::NONE;
+        current_test.directive_extent = -1;
+      }
+    }
+    else {
+      *output << std::string(4 * saved_tests.size(), ' ') << (condition ? "ok " : "not ok ") << current_test.found; 
+      *output << details::separator << description << std::endl;
+
+      if (!condition) {
+          current_test.failed++;
+      }
+
+      if (current_test.directive != details::Directive::NONE && current_test.directive_extent == 0) {
+          current_test.directive = details::Directive::NONE;
+          current_test.directive_extent = -1;
+      }
+    }
+
+    return condition;
+  }
+
+  void plan(const details::no_plan_t& p, const std::string& name) {
+    if (has_finished_testing) {
+      throw fatal_exception(std::string("cannot plan after testing finished"));
+    }
+
+    if (current_test.has_plan && current_test.found > 0) {
+      if (saved_tests.size() >= details::subtest_limit) {
+        throw fatal_exception("subtest nesting exceeded limits");
       }
       else {
-        return " # TODO " + TODO;
+        saved_tests.push(current_test);
+
+        current_test = details::Test_State(0, false,
+                current_test.directive, -1, current_test.directive_reason);
       }
     }
-
-    /* are we currently in a test marked todo? */
-    bool is_todo_test() noexcept { return !TODO.empty(); }
-
-    bool is_planned = false;
-    bool no_planned = false;
-    bool has_output_plan = false;
-
-    void output_plan(unsigned tests, const std::string& extra = "") {
-      if (has_output_plan) {
-        throw fatal_exception("Can't print plan twice");
-      }
-
-      *details::output << "1.." << tests << extra << std::endl;
-      has_output_plan = true;
+    else {
+      current_test.has_plan = true;
     }
 
-    inline void _done_testing(unsigned tests) {
-      static bool is_done = false;
-      if (is_done) {
-        fail("done_testing() was already called"); // TODO replace call to fail with non-test fn
-        return;
-      }
-      is_done = true;
+    if (!name.empty()) {
+      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+    }
+  }
+  void plan(const details::skip_all_t& p, const std::string& name) {
+    if (has_finished_testing) {
+      throw fatal_exception(std::string("cannot plan after testing finished"));
+    }
 
-      if (expected && tests != expected) {
-        // TODO unmix test output from error?
-        fail(std::string("planned to run ") + std::to_string(expected) + " tests but done_testing() expects " + std::to_string(tests));
+    if (current_test.has_plan && current_test.found > 0) {
+      if (saved_tests.size() >= details::subtest_limit) {
+        throw fatal_exception("subtest nesting exceeded limits");
       }
       else {
-        expected = tests;
-      }
-      is_planned = true;
-      if (!has_output_plan) {
-        output_plan(tests);
+        if (current_test.directive == details::Directive::TODO) {
+          throw fatal_exception(std::string("directive is TODO; cannot set it to SKIP"));
+        }
+
+        saved_tests.push(current_test);
+
+        current_test = details::Test_State(0, true,
+            current_test.directive, -1, current_test.directive_reason);
       }
     }
-  }
-
-  void plan(unsigned tests) {
-    if (is_planned) {
-      bail_out("Can't plan again!");
+    else {
+      current_test.has_plan = true;
     }
-    is_planned = true;
 
-    output_plan(tests);
-    expected = tests;
+    if (!name.empty()) {
+      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+    }
   }
-  void plan(const details::skip_all_type&, const std::string& reason) {
-    output_plan(0, " #skip " + reason);
+  void plan(const details::todo_all_t& p, const std::string& name) {
+    if (has_finished_testing) {
+      throw fatal_exception(std::string("cannot plan after testing finished"));
+    }
 
-    std::exit(0);
+    if (current_test.has_plan && current_test.found > 0) {
+      if (saved_tests.size() >= details::subtest_limit) {
+        throw fatal_exception("subtest nesting exceeded limits");
+      }
+      else {
+        if (current_test.directive == details::Directive::SKIP) {
+          throw fatal_exception(std::string("directive is SKIP; cannot set it to TODO"));
+        }
+
+        saved_tests.push(current_test);
+
+        current_test = details::Test_State(0, true,
+            current_test.directive, -1, current_test.directive_reason);
+      }
+    }
+    else {
+      current_test.has_plan = true;
+    }
+
+    if (!name.empty()) {
+      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+    }
   }
-  void plan(const details::no_plan_type&) noexcept {
-    is_planned = true;
-    no_planned = true;
+  void plan(unsigned tests, const std::string& name) {
+    if (has_finished_testing) { 
+      throw fatal_exception(std::string("cannot plan after testing finished"));
+    }
+
+    if (current_test.has_plan && current_test.found > 0) {
+      if (saved_tests.size() >= details::subtest_limit) {
+        throw fatal_exception(std::string("subtest nesting exceeded limits"));
+      }
+      else {
+        saved_tests.push(current_test);
+
+        current_test = details::Test_State(tests, true,
+            current_test.directive, -1, current_test.directive_reason);
+      }
+    }
+    else {
+      current_test.has_plan = true;
+      current_test.expected = tests;
+    }
+
+    if (!name.empty()) {
+      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+    }
+
+    if (current_test.expected > 0) {
+      *output << std::string(4 * saved_tests.size(), ' ') << "1.." << current_test.expected << std::endl;
+    }
   }
 
   void done_testing() {
-    _done_testing(encountered());
+    if (has_finished_testing) {
+      throw fatal_exception("done_testing() called too many times");
+    }
+    
+    // plan computed retroactively when tests unknown or unplanned
+    if (current_test.expected == 0 && !current_test.has_plan) {
+      *output << std::string(4 * saved_tests.size(), ' ') << "1.." << current_test.found << std::endl;
+    }
+    
+    if (current_test.found < current_test.expected && current_test.expected) {
+      throw fatal_exception(std::string("ran too few tests: expected ")
+            + std::to_string(current_test.expected)
+            + std::string(", got ") + std::to_string(current_test.found));
+    }
+
+    if (current_test.found > current_test.expected && current_test.expected) {
+       throw fatal_exception(std::string("ran too many tests: expected ")
+            + std::to_string(current_test.expected)
+            + std::string(", got ") + std::to_string(current_test.found));
+    }
+
+    if (saved_tests.empty()) {
+      has_finished_testing = true;
+      *output << std::endl;
+    }
+    else {
+      /* 
+       * because the outer test considers its subtest to be a single
+       * test, the subtest's success is measured by the total number
+       * of its failed tests. any failed tests cause the entire subtest
+       * to be counted as a failure. this is the same reason that
+       * directives are automatically inherited by subtests
+       */
+      bool subtest_failed = (current_test.failed > 0);
+
+      current_test = saved_tests.top();
+      current_test.found++;
+      
+      if (current_test.directive_extent > 0) {
+        current_test.directive_extent--;
+      }
+
+      if (current_test.directive_extent == 0) {
+        current_test.directive = details::Directive::NONE;
+      }
+
+      if (subtest_failed) {
+        current_test.failed++;
+      }
+
+      saved_tests.pop();
+    }
   }
 
-  void done_testing(unsigned tests) {
-    no_planned = false;
-    _done_testing(tests);
+  void done_testing(unsigned n) {
+    if (has_finished_testing) {
+      throw fatal_exception("done_testing() called too many times");
+    }
+    
+    /* 
+     * plan computed retroactively when tests unknown or unknown
+     * argument n is used only if expecting 0 tests or no plan
+     */
+    if (current_test.expected == 0 && !current_test.has_plan) {
+      if (current_test.found == n) { 
+        *output << std::string(4 * saved_tests.size(), ' ') << "1.." << n << std::endl;
+      }
+      else {
+        throw fatal_exception(std::string("found more tests than given to done_testing(unsigned)"));
+      }
+    }
+
+    if (current_test.found < current_test.expected && current_test.expected) {
+      throw fatal_exception(std::string("ran too few tests: expected ")
+            + std::to_string(current_test.expected)
+            + std::string(", got ") + std::to_string(current_test.found));
+    }
+
+    if (current_test.found > current_test.expected && current_test.expected) {
+       throw fatal_exception(std::string("ran too many tests: expected ")
+            + std::to_string(current_test.expected)
+            + std::string(", got ") + std::to_string(current_test.found));
+    }
+
+    if (saved_tests.empty()) {
+      has_finished_testing = true;
+      *output << std::endl;
+    }
+    else {
+      /* 
+       * because the outer 'subtest' (I use this term liberally; note
+       * that the implicit 'test' created by TAP when it is used may
+       * also be called a subtest) considers its subtest to be a single
+       * test, the subtest's success is measured by the total number
+       * of its failed tests. any failed tests cause the entire subtest
+       * to be counted as a failure. this is the same reason that
+       * directives are automatically inherited by subtests
+       */
+      bool subtest_failed = (current_test.failed > 0);
+      
+      current_test = saved_tests.top();
+      current_test.found++;
+
+      if (current_test.directive_extent > 0) {
+        current_test.directive_extent--;
+      }
+
+      if (current_test.directive_extent == 0) {
+        current_test.directive = details::Directive::NONE;
+      }
+
+      if (subtest_failed) {
+        current_test.failed++;
+      }
+
+      saved_tests.pop();
+    }
   }
 
   unsigned planned() noexcept {
-    return expected;
+    return current_test.expected;
   }
   unsigned encountered() noexcept {
-    return counter;
+    return current_test.found;
   }
 
   int exit_status() {
-    if (!is_planned && encountered()) {
-      diag("Tests were run but no plan was declared and done_testing() was not seen.");
+    if (current_test.failed < 255) {
+      return current_test.failed;
     }
-    if (no_planned) {
-      output_plan(encountered());
-      return std::min(254u, not_oks);
-    }
-    else if (expected == counter) {
-      return std::min(254u, not_oks);
-    }
-    else {
-      return 255;
-    }
+
+    return 255;
   }
+
   bool summary() noexcept {
-    return not_oks;
+    return current_test.failed;
   }
 
   void bail_out(const std::string& reason) {
-    *details::output << "Bail out!  " << reason << std::endl;
+    *output << std::string(4 * saved_tests.size(), ' ') << "Bail out! " << reason << std::endl;
 
     std::exit(255); // does not unwind stack!
   }
 
-  bool ok(bool is_ok, const std::string& message) {
-    *details::output << (is_ok ? "ok " : "not ok ") << ++counter; 
-    *details::output << " - " << message << todo_test()  << std::endl;
-
-    if (!is_ok && !is_todo_test()) {
-      ++not_oks;
-    }
-
-    return is_ok;
+  void pass(const std::string& message) {
+    ok(true, message);
   }
-  bool not_ok(bool is_not_ok, const std::string& message) {
-    return !ok(!is_not_ok, message);
+  void fail(const std::string& message) {
+    ok(false, message);
   }
 
-  bool pass(const std::string& message) {
-    return ok(true, message);
-  }
-  bool fail(const std::string& message) {
-    return ok(false, message);
-  }
-
+  // mark the next num tests with skip directive
   void skip(unsigned num, const std::string& reason) {
-    for(unsigned i = 0; i < num; ++i) {
-      pass(" # skip " + reason);
+    if (current_test.directive == details::Directive::TODO) {
+      throw fatal_exception("cannot apply multiple directives simultaneously");
     }
+
+    current_test.directive = details::Directive::SKIP;
+    current_test.directive_extent = num;
+    current_test.directive_reason = reason;
+  }
+  
+  // mark the next test with skip directive
+  void skip(const std::string& reason) {
+    if (current_test.directive == details::Directive::TODO) {
+      throw fatal_exception("cannot apply multiple directives simultaneously");
+    }
+
+    current_test.directive = details::Directive::SKIP;
+    current_test.directive_extent = 1;
+    current_test.directive_reason = reason;
+  }
+  
+  // mark the next num tests with todo directive
+  void todo(unsigned num, const std::string& reason) {
+    if (current_test.directive == details::Directive::SKIP) {
+      throw fatal_exception("cannot apply multiple directives simultaneously");
+    }
+
+    current_test.directive = details::Directive::TODO;
+    current_test.directive_extent = num;
+    current_test.directive_reason = reason;
+  }
+  
+  // mark the next test with todo directive
+  void todo(const std::string& reason) {
+    if (current_test.directive == details::Directive::SKIP) {
+      throw fatal_exception("cannot apply multiple directives simultaneously");
+    }
+
+    current_test.directive = details::Directive::TODO;
+    current_test.directive_extent = 1;
+    current_test.directive_reason = reason;
   }
 
   void set_output(std::ostream& new_output) {
-    if (is_planned) {
+    if (!saved_tests.empty() && current_test.has_plan) {
       throw fatal_exception("Can't set output after plan()");
     }
-    details::output = &new_output;
+    output = &new_output;
   }
   void set_error(std::ostream& new_error) {
-    if (is_planned) {
+    if (!saved_tests.empty() && current_test.has_plan) {
       throw fatal_exception("Can't set error after plan()");
     }
-    details::error = &new_error;
-  }
-
-  todo_guard::todo_guard() noexcept : value(TODO) {}
-  todo_guard::~todo_guard() noexcept { TODO = value; }
-  
-  namespace details {
-    std::ostream* output = &std::cout;
-    std::ostream* error = &std::cout;
-
-    static std::stack<unsigned> block_expected;
-
-    void start_block(unsigned expected) noexcept {
-      block_expected.push(encountered() + expected);
-    }
-    unsigned stop_block() {
-      unsigned ret = block_expected.top();
-      block_expected.pop();
-
-      return ret;
-    }
-
-    char const * failed_test_msg() noexcept {
-      return is_todo_test() ? "Failed (TODO) test" : "Failed test";
-    }
-
-  }
-  
-  void skip(const std::string& reason) {
-    throw details::Skip_exception(reason);
-  }
-  void skip_todo(const std::string& reason) {
-    throw details::Todo_exception(reason);
+    error = &new_error;
   }
 }

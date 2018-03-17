@@ -9,7 +9,7 @@
 using namespace TAP;
 
 int main() {
-  plan(4);
+  plan(5);
 
   ok(1, "the value 1 is true");
 
@@ -19,7 +19,10 @@ int main() {
 
   ok(1 == 1, "1 == 1");
 
+  note("is is defined as a template");
+  is(5, 5, "5 is 5");
+
   done_testing();
 
-  return 0;
+  return exit_status();
 }
