@@ -65,7 +65,7 @@ namespace TAP {
     current_test.found++;
 
     if (current_test.directive == details::Directive::SKIP && current_test.directive_extent != 0) {
-      *output << std::string(4 * saved_tests.size(), ' ') << "ok " << current_test.found << details::separator;
+      *output << test_indent << "ok " << current_test.found << details::separator;
       *output << description << " # SKIP " << current_test.directive_reason << std::endl;
 
       current_test.directive_extent--;
@@ -76,7 +76,7 @@ namespace TAP {
       }
     }
     else if (current_test.directive == details::Directive::TODO && current_test.directive_extent != 0) {
-      *output << std::string(4 * saved_tests.size(), ' ') << "not ok " << current_test.found << details::separator;
+      *output << test_indent << "not ok " << current_test.found << details::separator;
       *output << description << " # TODO " << current_test.directive_reason << std::endl;
 
       current_test.directive_extent--;
@@ -87,7 +87,7 @@ namespace TAP {
       }
     }
     else {
-      *output << std::string(4 * saved_tests.size(), ' ') << (condition ? "ok " : "not ok ") << current_test.found; 
+      *output << test_indent << (condition ? "ok " : "not ok ") << current_test.found; 
       *output << details::separator << description << std::endl;
 
       if (!condition) {
@@ -114,6 +114,8 @@ namespace TAP {
       }
       else {
         saved_tests.push(current_test);
+        
+        test_indent = std::string(2 * saved_tests.size(), ' ');
 
         current_test = details::Test_State(0, false,
                 current_test.directive, -1, current_test.directive_reason);
@@ -124,7 +126,7 @@ namespace TAP {
     }
 
     if (!name.empty()) {
-      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+      *output << test_indent << "**Test: " << name << "**" << std::endl;
     }
   }
   void plan(const details::skip_all_t& p, const std::string& name) {
@@ -143,6 +145,8 @@ namespace TAP {
 
         saved_tests.push(current_test);
 
+        test_indent = std::string(2 * saved_tests.size(), ' ');
+
         current_test = details::Test_State(0, true,
             current_test.directive, -1, current_test.directive_reason);
       }
@@ -152,7 +156,7 @@ namespace TAP {
     }
 
     if (!name.empty()) {
-      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+      *output << test_indent << "**Test: " << name << "**" << std::endl;
     }
   }
   void plan(const details::todo_all_t& p, const std::string& name) {
@@ -171,6 +175,8 @@ namespace TAP {
 
         saved_tests.push(current_test);
 
+        test_indent = std::string(2 * saved_tests.size(), ' ');
+
         current_test = details::Test_State(0, true,
             current_test.directive, -1, current_test.directive_reason);
       }
@@ -180,7 +186,7 @@ namespace TAP {
     }
 
     if (!name.empty()) {
-      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+      *output << test_indent << "**Test: " << name << "**" << std::endl;
     }
   }
   void plan(unsigned tests, const std::string& name) {
@@ -195,6 +201,8 @@ namespace TAP {
       else {
         saved_tests.push(current_test);
 
+        test_indent = std::string(2 * saved_tests.size(), ' ');
+
         current_test = details::Test_State(tests, true,
             current_test.directive, -1, current_test.directive_reason);
       }
@@ -205,11 +213,11 @@ namespace TAP {
     }
 
     if (!name.empty()) {
-      *output << std::string(4 * (saved_tests.size() - 1), ' ') << "**Test: " << name << "**" << std::endl;
+      *output << test_indent << "**Test: " << name << "**" << std::endl;
     }
 
     if (current_test.expected > 0) {
-      *output << std::string(4 * saved_tests.size(), ' ') << "1.." << current_test.expected << std::endl;
+      *output << test_indent << "1.." << current_test.expected << std::endl;
     }
   }
 
@@ -220,7 +228,7 @@ namespace TAP {
     
     // plan computed retroactively when tests unknown or unplanned
     if (current_test.expected == 0 && !current_test.has_plan) {
-      *output << std::string(4 * saved_tests.size(), ' ') << "1.." << current_test.found << std::endl;
+      *output << test_indent << "1.." << current_test.found << std::endl;
     }
     
     if (current_test.found < current_test.expected && current_test.expected) {
@@ -265,6 +273,8 @@ namespace TAP {
       }
 
       saved_tests.pop();
+
+      test_indent = std::string(2 * saved_tests.size(), ' ');
     }
   }
 
@@ -279,7 +289,7 @@ namespace TAP {
      */
     if (current_test.expected == 0 && !current_test.has_plan) {
       if (current_test.found == n) { 
-        *output << std::string(4 * saved_tests.size(), ' ') << "1.." << n << std::endl;
+        *output << test_indent << "1.." << n << std::endl;
       }
       else {
         throw fatal_exception(std::string("found more tests than given to done_testing(unsigned)"));
@@ -330,6 +340,8 @@ namespace TAP {
       }
 
       saved_tests.pop();
+      
+      test_indent = std::string(2 * saved_tests.size(), ' ');
     }
   }
 
@@ -353,7 +365,7 @@ namespace TAP {
   }
 
   void bail_out(const std::string& reason) {
-    *output << std::string(4 * saved_tests.size(), ' ') << "Bail out! " << reason << std::endl;
+    *output << test_indent << "Bail out! " << reason << std::endl;
 
     std::exit(255); // does not unwind stack!
   }
