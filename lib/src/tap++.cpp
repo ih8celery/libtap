@@ -47,10 +47,6 @@ namespace TAP {
   namespace {
     std::stack<details::Test_State> saved_tests;
     details::Test_State current_test;
-
-    bool has_finished_testing = false;
-
-    bool pre_print_yaml = false;
   }
 
   const details::no_plan_t  no_plan  = details::no_plan_t();
