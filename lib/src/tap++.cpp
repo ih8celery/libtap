@@ -49,6 +49,8 @@ namespace TAP {
     details::Test_State current_test;
 
     bool has_finished_testing = false;
+
+    bool pre_print_yaml = false;
   }
 
   const details::no_plan_t  no_plan  = details::no_plan_t();
@@ -409,6 +411,10 @@ namespace TAP {
     current_test.directive = details::Directive::TODO;
     current_test.directive_extent = 1;
     current_test.directive_reason = reason;
+  }
+
+  void set_yaml_pre_print(bool val) {
+    pre_print_yaml = val;
   }
 
   void set_output(std::ostream& new_output) {

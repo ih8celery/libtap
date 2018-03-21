@@ -38,16 +38,6 @@
   }\
 } while (0)
 
-// TODO implement structs no_plan_t, skip_all_t, todo_all_t for plan() overloads 
-
-/* a sequence of tests runs in an implicit block with none of the
- * protections of an explicit block
- * a whole block is seen individually as a test whose result indicates
- * failure or success. 0 means success, 1-255 means failure
- * adding a block pushes its plan onto stack, TAP::planned() retrieves top of stack
- * the default plan size is zero
- * TODO 'TODO' macro marks all remaining tests in block
- * TODO SKIP macro skips all remaining tests in block*/
 namespace TAP {
   namespace details {
     enum class Directive { NONE, SKIP, TODO };
@@ -77,6 +67,8 @@ namespace TAP {
     std::ostream* error = &std::cerr;
 
     extern bool has_finished_testing;
+
+    extern bool pre_print_yaml;
   }
 
   extern const details::no_plan_t no_plan;
@@ -114,6 +106,7 @@ namespace TAP {
   int exit_status();
   bool summary() noexcept;
 
+  void set_yaml_pre_print(bool);
   void set_output(std::ostream&);
   void set_error(std::ostream&); 
   
@@ -263,18 +256,12 @@ namespace TAP {
     _ok(std::is_convertible<T, U>::value, description);
   }
 
-  /* deprecated. use isnt_convertible instead */
-  template<typename T, typename U> void is_inconvertible(const std::string& description) {
-    _ok(!std::is_convertible<T, U>::value, description);
-  }
-
   template<typename T, typename U> void isnt_convertible(const std::string& description) {
     _ok(!std::is_convertible<T, U>::value, description);
   }
-  // }
 }
 
-#ifdef WANT_TEST_EXTRAS // {
+#ifdef WANT_TEST_EXTRAS
 /* 
  * exception-handling analogue to TAP::ok, where code that throws an
  * exception fails the test
