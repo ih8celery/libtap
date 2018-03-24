@@ -385,7 +385,7 @@ namespace TAP {
   }
 
   bool summary() noexcept {
-    return current_test.failed;
+    return (current_test.failed == 0);
   }
 
   void bail_out(const std::string& reason) {
