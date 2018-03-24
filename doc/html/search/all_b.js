@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['tap_27s_20core',['TAP&apos;s Core',['../md_doc_extending-tap.html',1,'']]],
   ['tap_2b_2b_2ecpp',['tap++.cpp',['../tap_09_09_8cpp.html',1,'']]],
   ['tap_2b_2b_2eh',['tap++.h',['../tap_09_09_8h.html',1,'']]],
   ['test_5fstate',['Test_State',['../struct_t_a_p_1_1details_1_1_test___state.html',1,'TAP::details']]],

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['name',['NAME',['../md_doc_userman.html',1,'']]]
+  ['faqs',['FAQs',['../md_doc_FAQs.html',1,'']]]
 ];

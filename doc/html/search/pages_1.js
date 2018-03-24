@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['faqs',['FAQs',['../md_doc_FAQs.html',1,'']]]
+  ['extending_20tap_27s_20core',['Extending TAP&apos;s Core',['../md_doc_extending-tap.html',1,'']]]
 ];

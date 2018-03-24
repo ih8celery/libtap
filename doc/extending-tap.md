@@ -1,4 +1,4 @@
-# TAP's Core
+# Extending TAP's Core
 at a minimum, libtap++ will do everything that the most recent TAP
 specification prescribes. if I ever decide to diverge from TAP, I
 will rename the project to something more appropriate. beyond the
