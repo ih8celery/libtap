@@ -20,7 +20,7 @@
 #define FLOAT_CMP(left, right, e) (2 * fabs(double(left) - double(right)) / (fabs(double(left)) + fabs(double(right))) > (e))
 
 /**
- * \macro ok(condition, description)
+ * \define ok(condition, description)
  *
  * \brief primary testing function. uses 'condition' to determine<br>
  * state of the test, which is described by argument 'description'.<br>
@@ -43,7 +43,7 @@
 } while (0)
 
 /**
- * \macro not_ok(condition, description)
+ * \define not_ok(condition, description)
  * 
  * \brief similar to ok, but has the opposite treatment of 'condition'
  */
@@ -314,14 +314,26 @@ namespace TAP {
   void set_error(std::ostream&); 
   
   // diagnostic templates
+  /**
+   * \fn template<class T> void diag(const T&)
+   * \brief print diagnostic message to error stream
+   */
   template<typename T>
   void diag(const T& first) {
     *error << "# " << first << std::endl;
   }
+  
+  /**
+   * \fn template<class T1, class T2> void diag(const T1&, const T2&)
+   */
   template<typename T1, typename T2>
   void diag(const T1& first, const T2& second) {
     *error << "# " << first << second << std::endl;
   }
+  
+  /**
+   * \fn template<class T,class U,class V> void diag(const T&,const U&,const V&)
+   */
   template<typename T1, typename T2, typename T3>
   void diag(const T1& first, const T2& second, const T3& third) {
     *error << "# " << first << second << third << std::endl;
@@ -335,6 +347,10 @@ namespace TAP {
     *error << "# " << first << second << third << fourth << fifth << std::endl;
   }
 
+  /**
+   * \fn template<class T,class U> void yaml_fail(const string&, const T&, const U&)
+   * \brief print diagnostic as inline yaml document upon failure of 'is' or 'isnt'
+   */
   template <typename T, typename U>
   void yaml_fail(const std::string& msg, const T& got, const U& expect) {
     *error << test_indent << "  ---" << std::endl;
@@ -347,14 +363,26 @@ namespace TAP {
   }
   
   // comment templates
+  /**
+   * \fn template<class T> void note(const T&)
+   * \brief print ancillary information to output stream
+   */
   template<typename T>
   void note(const T& first) {
     *output << "# " << first << std::endl;
   }
+
+  /**
+   * \fn template<class T,class U> void note(const T&,const U&)
+   */
   template<typename T1, typename T2>
   void note(const T1& first, const T2& second) {
     *output << "# " << first << second << std::endl;
   }
+
+  /**
+   * \fn template<class T,class U,class V> void note(const T&,const U&,const V&)
+   */
   template<typename T1, typename T2, typename T3>
   void note(const T1& first, const T2& second, const T3& third) {
     *output << "# " << first << second << third << std::endl;
@@ -369,6 +397,12 @@ namespace TAP {
   }
 
   // is_* family of templates
+  /**
+   * \fn template<class T, class U> void is(const T&, const U&, const string& = "")
+   * \brief compare first argument to second. if the two are "==", the<br>
+   * test succeeds. this template will not be selected if second arg<br>
+   * is a floating point type
+   */
   template<typename T, typename U> 
   typename std::enable_if<!std::is_floating_point<U>::value, void>::type 
   is(const T& left, const U& right, const std::string& description = "") {
@@ -384,7 +418,13 @@ namespace TAP {
       yaml_fail(description, left, right);
     }
   }
-
+  
+  /**
+   * \fn template<class T, class U> void isnt(const T&, const U&, const string& = "")
+   * \brief compare first argument to second. if the two are NOT "==", the<br>
+   * test succeeds. this template will not be selected if second arg<br>
+   * is a floating point type
+   */
   template<typename T, typename U>
   typename std::enable_if<!std::is_floating_point<U>::value, void>::type
   isnt(const T& left, const U& right, const std::string& description = "") {
@@ -400,7 +440,14 @@ namespace TAP {
       yaml_fail(description, left, right);
     }
   }
-
+  
+  /**
+   * \fn template<class T, class U> void is(const T&, const U&, const string& = "", double = 0.01)
+   * \brief compare first argument to second. if the two are "==", the<br>
+   * test succeeds. IMPORTANT: this template will be selected only if<br>
+   * its second argument is a floating point. Float arguments are allowed<br>
+   * to differ by an epsilon with a default value of 0.01
+   */
   template<typename T, typename U>
   typename std::enable_if<std::is_floating_point<U>::value, void>::type
   is(const T& left, const U& right, const std::string& description = "", double epsilon = 0.01) {
@@ -417,6 +464,13 @@ namespace TAP {
     }
   }
 
+  /**
+   * \fn template<class T, class U> void isnt(const T&, const U&, const string& = "", double = 0.01)
+   * \brief compare first argument to second. if the two are NOT "==", the<br>
+   * test succeeds. IMPORTANT: this template will only be selected if<br>
+   * second its second argument is a floating point. Float arguments<br>
+   * are allowed to differ by an epsilon with a default value of 0.01
+   */
   template<typename T, typename U>
   typename std::enable_if<std::is_floating_point<U>::value, void>::type
   isnt(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
@@ -433,109 +487,122 @@ namespace TAP {
     }
   }
 
+  /**
+   * \fn template<class T, class U> void is_convertible(const string&)
+   * \brief test whether type T can be converted to U
+   */
   template<typename T, typename U> void is_convertible(const std::string& description) {
     _ok(std::is_convertible<T, U>::value, description);
   }
 
+  /**
+   * \fn template<class T, class U> void isnt_convertible(const string&)
+   * \brief test whether type T can NOT be converted to U
+   */
   template<typename T, typename U> void isnt_convertible(const std::string& description) {
     _ok(!std::is_convertible<T, U>::value, description);
   }
 }
 
 #ifdef WANT_TEST_EXTRAS
-/* 
- * exception-handling analogue to TAP::ok, where code that throws an
+/**
+ * \define TRY_OK(code, description)
+ * \brief exception-handling analogue to TAP::ok, where code that throws<br> 
  * exception fails the test
  */
 #define TRY_OK(code, description) do {\
-    try {\
-      code;\
-      TAP::pass(description);\
-    }\
-    catch (const std::exception& e) {\
-      TAP::fail(description);\
-      TAP::note("Caught exception: ", e.what());\
-    }\
-    catch (...) {\
-      TAP::fail(description);\
-    }\
-  } while (0)
+  try {\
+    code;\
+    TAP::pass(description);\
+  }\
+  catch (const std::exception& e) {\
+    TAP::fail(description);\
+    TAP::note("Caught exception: ", e.what());\
+  }\
+  catch (...) {\
+    TAP::fail(description);\
+  }\
+} while (0)
 
-/*
- * exception-handling analogue to TAP::not_ok, where code that does
- * NOT throw an exception fails the test
+/**
+ * \define TRY_NOT_OK(code, description)
+ * \brief exception-handling analogue to TAP::not_ok, where code that<br>
+ * does NOT throw an exception fails the test
  */
 #define TRY_NOT_OK(code, description) do {\
-    try {\
-      code;\
-      TAP::fail(description);\
-      TAP::note("Expected an exception");\
-    }\
-    catch (const std::exception& e) {\
-      TAP::pass(description);\
-      TAP::note("Caught exception: ", e.what());\
-    }\
-    catch (...) {\
-      TAP::pass(description);\
-      TAP::note("Caught non-standard exception");\
-    }\
-  } while (0)
+  try {\
+    code;\
+    TAP::fail(description);\
+    TAP::note("Expected an exception");\
+  }\
+  catch (const std::exception& e) {\
+    TAP::pass(description);\
+    TAP::note("Caught exception: ", e.what());\
+  }\
+  catch (...) {\
+    TAP::pass(description);\
+    TAP::note("Caught non-standard exception");\
+  }\
+} while (0)
 
-/* 
- * begin a sequence of tests enclosed in a try/catch block.
- * paired with TEST_END
+/**
+ * \define TEST_START(plan)
+ * \brief begin a sequence of tests enclosed in a try/catch block<br>
+ * to capture test related exceptions. paired with TEST_END
  */
-#define TEST_START(num) {\
-    const char* _current_message = NULL;\
-    TAP::plan(num);\
-    try {
+#define TEST_START(plan) {\
+  const char* _current_message = NULL;\
+  TAP::plan(plan);\
+  try {
 
-/*
- * end a sequence of tests by checking that the planned number of tests
- * were run and by handling TAP-specific and standard exceptions.
+/**
+ * \define TEST_END
+ * \brief end a sequence of tests by checking that the planned number<br>
+ * of tests were run and by handling TAP-specific and standard exceptions.<br>
  * paired with TEST_START
  */
 #define TEST_END \
-      if (TAP::encountered() < TAP::planned()) {\
-        TAP::note("Looks like you planned ", TAP::planned(), " tests but only ran ", TAP::encountered());\
-      }\
-      else if(TAP::encountered() > TAP::planned()) {\
-        TAP::note("Looks like you planned ", TAP::planned(), " tests but ran ", TAP::encountered() - TAP::planned(), " extra");\
-      }\
+    if (TAP::encountered() < TAP::planned()) {\
+      TAP::note("Looks like you planned ", TAP::planned(), " tests but only ran ", TAP::encountered());\
     }\
-    catch(TAP::details::Skip_exception& skipper) {\
-      TAP::skip(TAP::planned() - TAP::encountered(), skipper.reason);\
+    else if(TAP::encountered() > TAP::planned()) {\
+      TAP::note("Looks like you planned ", TAP::planned(), " tests but ran ", TAP::encountered() - TAP::planned(), " extra");\
     }\
-    catch(TAP::details::Todo_exception& todoer) {\
-      /*TODO*/\
-    }\
-    catch(const TAP::fatal_exception& e) {\
-      if(_current_message) TAP::fail(_current_message);\
-      TAP::note("A fatal error occured:,", e.what()," aborting");\
-    }\
-    catch(const std::exception& e) {\
-      if(_current_message) TAP::fail(_current_message);\
-      TAP::note("Got unknown error: ", e.what());\
-    }\
-    catch (...) {\
-      if(_current_message) TAP::fail(_current_message);\
-    }\
-    return TAP::exit_status();\
-  }
+  }\
+  catch(const TAP::fatal_exception& e) {\
+    if(_current_message) TAP::fail(_current_message);\
+    TAP::note("A fatal error occured:,", e.what()," aborting");\
+  }\
+  catch(const std::exception& e) {\
+    if(_current_message) TAP::fail(_current_message);\
+    TAP::note("Got unknown error: ", e.what());\
+  }\
+  catch (...) {\
+    if(_current_message) TAP::fail(_current_message);\
+  }\
+  return TAP::exit_status();\
+}
 
-/* declare named group of tests */
+/**
+ * \define SUBTEST(planned, name)
+ * \brief declare named group of tests with a plan
+ */
 #define SUBTEST(planned, name) \
   TAP::plan(planned, name);
 
-/* 
- * start anonymous group of tests or continue current group if it has
- * not yet run any tests 
+/** 
+ * \define DO
+ * \brief start anonymous group of tests or continue current group if<br>
+ * it has not yet run any tests 
  */
 #define DO \
   TAP::plan(TAP::no_plan);\
   try {
 
-/* conclude a group of tests begun by DO */
+/**
+ * \define END
+ * \brief conclude a group of tests begun by DO
+ */
 #define END \
     TAP::done_testing();\
   }\
@@ -554,6 +621,5 @@ namespace TAP {
   _current_message = NULL
 
 #endif /*WANT_TEST_EXTRAS*/
-// }
 
 #endif /*LIB_TAPPP_TAPPP_H*/
