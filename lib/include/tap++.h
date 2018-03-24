@@ -352,11 +352,11 @@ namespace TAP {
   }
 
   /**
-   * \fn template<class T,class U> void yaml_fail(const string&, const T&, const U&)
+   * \fn template<class T,class U> void yaml_diag(const string&, const T&, const U&)
    * \brief print diagnostic as inline yaml document upon failure of 'is' or 'isnt'
    */
   template <typename T, typename U>
-  void yaml_fail(const std::string& msg, const T& got, const U& expect) {
+  void yaml_diag(const std::string& msg, const T& got, const U& expect) {
     *error << test_indent << "  ---" << std::endl;
     *error << test_indent << "  message: " << msg << std::endl;
     *error << test_indent << "  severity: fail" << std::endl;
@@ -413,13 +413,13 @@ namespace TAP {
     bool cmp_failed = !(left == right);
 
     if (pre_print_yaml && cmp_failed) {
-      yaml_fail(description, left, right);
+      yaml_diag(description, left, right);
     }
 
     not_ok(cmp_failed, description);
 
     if (!pre_print_yaml && cmp_failed) {
-      yaml_fail(description, left, right);
+      yaml_diag(description, left, right);
     }
   }
   
@@ -435,13 +435,13 @@ namespace TAP {
     bool cmp_success = (left == right);
 
     if (pre_print_yaml && cmp_success) {
-      yaml_fail(description, left, right);
+      yaml_diag(description, left, right);
     }
 
     not_ok(cmp_success, description);
 
     if (!pre_print_yaml && cmp_success) {
-      yaml_fail(description, left, right);
+      yaml_diag(description, left, right);
     }
   }
   
@@ -458,13 +458,13 @@ namespace TAP {
     bool cmp_failed = !(FLOAT_CMP(left, right, epsilon));
     
     if (pre_print_yaml && cmp_failed) {
-      yaml_fail(description, left, right);
+      yaml_diag(description, left, right);
     }
 
     not_ok(cmp_failed, description);
 
     if (!pre_print_yaml && cmp_failed) {
-      yaml_fail(description, left, right);
+      yaml_diag(description, left, right);
     }
   }
 
@@ -481,13 +481,13 @@ namespace TAP {
     bool cmp_success = FLOAT_CMP(left, right, epsilon);
 
     if (pre_print_yaml && cmp_success) {
-      yaml_fail(message, left, right);
+      yaml_diag(message, left, right);
     }
 
     not_ok(cmp_success, message);
 
     if (!pre_print_yaml && cmp_success) {
-      yaml_fail(message, left, right);
+      yaml_diag(message, left, right);
     }
   }
 
