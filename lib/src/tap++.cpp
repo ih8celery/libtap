@@ -1,3 +1,8 @@
+/**
+ * \file tap++.cpp
+ * \author Adam Marshall (ih8celery)
+ */
+
 #define WANT_TEST_EXTRAS
 
 #include "tap++.h"
