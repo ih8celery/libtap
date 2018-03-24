@@ -1,10 +1,15 @@
 #define WANT_TEST_EXTRAS
+
 #include "tap++.h"
 #include <stack>
 #include <cstdlib>
 #include <utility>
 
 namespace TAP {
+  /**
+   * \var string _tap_version_info
+   * \brief information about the current version of Test Anything Protocol
+   */
   const std::string _tap_version_info = "TAP version 13";
 
   namespace details {
@@ -31,7 +36,12 @@ namespace TAP {
       unsigned expected;
       unsigned found;
       unsigned failed;
+      
+      // active directive
       Directive directive;
+      // number of tests to which current directive still applies.
+      // a value of -1 causes directive to be applied to the end of
+      // the current test group (including all of its subtests)
       int directive_extent;
       std::string directive_reason;
       bool has_plan;
@@ -41,11 +51,25 @@ namespace TAP {
     struct skip_all_t {};
     struct todo_all_t {};
 
+    /**
+     * \var constexpr stack<Test_State>::size_type details::subtest_limit = 3
+     * \brief limits the extent of subtest nesting to 3
+     */
     constexpr std::stack<Test_State>::size_type subtest_limit = 3;
   }
   
   namespace {
+    /**
+     * \var stack<details::Test_State> anonymous::saved_tests
+     * \brief tests which contain the current one, in order from most<br>
+     * deeply nested to least
+     */
     std::stack<details::Test_State> saved_tests;
+    
+    /**
+     * \var details::Test_State anonymous::current_tests
+     * \brief most deeply nested active test group
+     */
     details::Test_State current_test;
   }
 
@@ -377,7 +401,6 @@ namespace TAP {
     ok(false, message);
   }
 
-  // mark the next num tests with skip directive
   void skip(unsigned num, const std::string& reason) {
     if (current_test.directive == details::Directive::TODO) {
       throw fatal_exception("cannot apply multiple directives simultaneously");
@@ -388,7 +411,6 @@ namespace TAP {
     current_test.directive_reason = reason;
   }
   
-  // mark the next test with skip directive
   void skip(const std::string& reason) {
     if (current_test.directive == details::Directive::TODO) {
       throw fatal_exception("cannot apply multiple directives simultaneously");
@@ -399,7 +421,6 @@ namespace TAP {
     current_test.directive_reason = reason;
   }
   
-  // mark the next num tests with todo directive
   void todo(unsigned num, const std::string& reason) {
     if (current_test.directive == details::Directive::SKIP) {
       throw fatal_exception("cannot apply multiple directives simultaneously");
@@ -410,7 +431,6 @@ namespace TAP {
     current_test.directive_reason = reason;
   }
   
-  // mark the next test with todo directive
   void todo(const std::string& reason) {
     if (current_test.directive == details::Directive::SKIP) {
       throw fatal_exception("cannot apply multiple directives simultaneously");
