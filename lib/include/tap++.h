@@ -149,7 +149,11 @@ namespace TAP {
      * \var bool has_finished_testing
      * \brief false until the outermost test group is finished
      */
-    extern bool has_finished_testing;
+    bool has_finished_testing;
+
+    std::string test_indent;
+
+    bool pre_print_yaml = false;
   }
 
   /**
@@ -291,6 +295,13 @@ namespace TAP {
   bool summary() noexcept;
 
   /**
+   * \fn void set_yaml_pre_print(bool)
+   * \brief specify the order of printing of yaml diagnostics with<br>
+   * respect to main test output
+   */
+  void set_yaml_pre_print(bool);
+  
+  /**
    * \fn void set_output(ostream&)
    * \brief set the output stream
    */
@@ -323,8 +334,19 @@ namespace TAP {
   void diag(const T1& first, const T2& second, const T3& third, const T4& fourth, const T5& fifth) {
     *error << "# " << first << second << third << fourth << fifth << std::endl;
   }
+
+  template <typename T, typename U>
+  void yaml_fail(const std::string& msg, const T& got, const U& expect) {
+    *error << test_indent << "  ---" << std::endl;
+    *error << test_indent << "  message: " << msg << std::endl;
+    *error << test_indent << "  severity: fail" << std::endl;
+    *error << test_indent << "  data:" << std::endl;
+    *error << test_indent << "    got: " << got << std::endl;
+    *error << test_indent << "    expect: " << expect << std::endl;
+    *error << test_indent << "  ..." << std::endl;
+  }
   
-  // comment templates {
+  // comment templates
   template<typename T>
   void note(const T& first) {
     *output << "# " << first << std::endl;
@@ -345,102 +367,69 @@ namespace TAP {
   void note(const T1& first, const T2& second, const T3& third, const T4& fourth, const T5& fifth) {
     *output << "# " << first << second << third << fourth << fifth << std::endl;
   }
-  // }
 
-  // is_* family of templates {
+  // is_* family of templates
   template<typename T, typename U> 
   typename std::enable_if<!std::is_floating_point<U>::value, void>::type 
   is(const T& left, const U& right, const std::string& description = "") {
-    try {
-      ok(left == right, description);
-    }
-    catch(const std::exception& e) {
-      fail(description);
-      diag("Test failed"," '", description, "'");
-      diag("Caught exception '", e.what(), "'");
-      diag("       Got: ", left);
-      diag("  Expected: ", right);
-    }
-    catch(...) {
-      fail(description);
-      diag("Test failed"," '", description, "'");
-      diag("Caught unknown exception");
-      diag("       Got: ", left);
-      diag("  Expected: ", right);
+    bool cmp_failed = !(left == right);
+
+    if (pre_print_yaml && cmp_failed) {
+      yaml_fail(description, left, right);
     }
 
-    if (!TAP::details::test_status) { // TODO is this messaging required by TAP13?
-      diag("Test failed"," '", description, "'");
-      diag("       Got: ", left);
-      diag("  Expected: ", right);
+    not_ok(cmp_failed, description);
+
+    if (!pre_print_yaml && cmp_failed) {
+      yaml_fail(description, left, right);
     }
   }
 
   template<typename T, typename U>
   typename std::enable_if<!std::is_floating_point<U>::value, void>::type
   isnt(const T& left, const U& right, const std::string& description = "") {
-    try {
-      ok(left != right, description);
+    bool cmp_success = (left == right);
+
+    if (pre_print_yaml && cmp_success) {
+      yaml_fail(description, left, right);
     }
-    catch(const std::exception& e) {
-      fail(description);
-      diag("In test ", description);
-      diag("Caught exception: ", e.what());
-    }
-    catch(...) {
-      fail(description);
-      diag("In test ", description);
-      diag("Caught unknown exception");
+
+    not_ok(cmp_success, description);
+
+    if (!pre_print_yaml && cmp_success) {
+      yaml_fail(description, left, right);
     }
   }
 
   template<typename T, typename U>
   typename std::enable_if<std::is_floating_point<U>::value, void>::type
   is(const T& left, const U& right, const std::string& description = "", double epsilon = 0.01) {
-    try {
-      ok(FLOAT_CMP(left, right, epsilon), description);
+    bool cmp_failed = !(FLOAT_CMP(left, right, epsilon));
+
+    if (pre_print_yaml && cmp_failed) {
+      yaml_fail(description, left, right);
     }
-    catch(const std::exception& e) {
-      fail(description);
-      diag("Test failed"," '", description, "'");
-      diag("Caught exception '", e.what(), "'");
-      diag("       Got: ", left);
-      diag("  Expected: ", right);
-    }
-    catch(...) {
-      fail(description);
-      diag("Test failed"," '", description, "'");
-      diag("Caught unknown exception");
-      diag("       Got: ", left);
-      diag("  Expected: ", right);
-    }
-    
-    if (!TAP::details::test_status) {
-      diag("Test failed"," '", description, "'");
-      diag("       Got: ", left);
-      diag("  Expected: ", right);
+
+    not_ok(cmp_failed, description);
+
+    if (!pre_print_yaml && cmp_failed) {
+      yaml_fail(description, left, right);
     }
   }
 
   template<typename T, typename U>
   typename std::enable_if<std::is_floating_point<U>::value, void>::type
   isnt(const T& left, const U& right, const std::string& message = "", double epsilon = 0.01) {
-    try {
-      ok(FLOAT_CMP(left, right, epsilon), message);
-    }
-    catch(const std::exception& e) {
-      fail(message);
-      diag("Test failed"," '", message, "'");
-      diag("Caught exception '", e.what(), "'");
+    bool cmp_success = FLOAT_CMP(left, right, epsilon);
 
-      return false;
+    if (pre_print_yaml && cmp_success) {
+      yaml_fail(message, left, right);
     }
-    catch(...) {
-      fail(message);
-      diag("Test failed"," '", message, "'");
-      diag("Caught unknown exception");
 
-      return false;
+    not_ok(cmp_success, message);
+
+    if (!pre_print_yaml && cmp_success) {
+      yaml_fail(message, left, right);
     }
   }
 
@@ -448,18 +437,12 @@ namespace TAP {
     _ok(std::is_convertible<T, U>::value, description);
   }
 
-  /* deprecated. use isnt_convertible instead */
-  template<typename T, typename U> void is_inconvertible(const std::string& description) {
-    _ok(!std::is_convertible<T, U>::value, description);
-  }
-
   template<typename T, typename U> void isnt_convertible(const std::string& description) {
     _ok(!std::is_convertible<T, U>::value, description);
   }
-  // }
 }
 
-#ifdef WANT_TEST_EXTRAS // {
+#ifdef WANT_TEST_EXTRAS
 /* 
  * exception-handling analogue to TAP::ok, where code that throws an
  * exception fails the test
