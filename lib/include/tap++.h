@@ -65,7 +65,7 @@
 namespace TAP {
   namespace details {
     /**
-     * \enum Directive
+     * \enum details::Directive
      *
      * \brief defines the three directives controlling the test<br>
      * emitter. NONE is the default directive; tests proceed normally.<br>
@@ -76,7 +76,7 @@ namespace TAP {
     enum class Directive { NONE, SKIP, TODO };
 
     /**
-     * \struct Test_State
+     * \struct details::Test_State
      *
      * \brief contains information about test groups which is saved<br>
      * on a stack
@@ -84,7 +84,7 @@ namespace TAP {
     struct Test_State;
 
     /**
-     * \struct no_plan_t
+     * \struct details::no_plan_t
      * \brief used to create a constant passed to plan function.<br>
      * a test group with no plan will print its 'header' running<br>
      * its tests
@@ -92,27 +92,27 @@ namespace TAP {
     struct no_plan_t;
 
     /**
-     * \struct skip_all_t
+     * \struct details::skip_all_t
      * \brief used to create a constant passed to plan function.<br>
      * a test group marked thus will not fully evaluate its tests
      */
     struct skip_all_t;
 
     /** 
-     * \struct todo_all_t
+     * \struct details::todo_all_t
      * \brief used to create a constant passed to plan function.<br>
      * all tests in such a test group are marked 'todo'
      */
     struct todo_all_t;
 
     /**
-     * \var bool test_status
+     * \var bool details::test_status
      * \brief success state of last run test
      */
     extern bool test_status;
 
     /**
-     * \var const char * separator
+     * \var const char * details::separator
      * \brief short string separating test state from description in output
      */
     extern const char * separator;
@@ -134,40 +134,44 @@ namespace TAP {
 
   namespace {
     /**
-     * \var std::ostream* output
+     * \var std::ostream* anonymous::output
      * \brief stream TAP prints normal output to
      */
     std::ostream* output = &std::cout;
 
     /**
-     * \var std::ostream* error
+     * \var std::ostream* anonymous::error
      * \brief stream TAP prints errors to
      */
     std::ostream* error = &std::cerr;
 
     /**
-     * \var bool has_finished_testing
+     * \var bool anonymous::has_finished_testing
      * \brief false until the outermost test group is finished
      */
     bool has_finished_testing;
 
+    /**
+     * \var string anonymous::test_indent
+     * \brief current amount of indentation of test group
+     */
     std::string test_indent;
 
     bool pre_print_yaml = false;
   }
 
   /**
-   * \var const no_plan_t no_plan
+   * \var const details::no_plan_t no_plan
    */
   extern const details::no_plan_t no_plan;
 
   /**
-   * \var const skip_all_t skil_all
+   * \var const details::skip_all_t skip_all
    */
   extern const details::skip_all_t skip_all;
 
   /**
-   * \var const todo_all_t todo_all
+   * \var const details::todo_all_t todo_all
    */
   extern const details::todo_all_t todo_all;
 
