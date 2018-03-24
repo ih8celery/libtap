@@ -1,3 +1,11 @@
+/**
+ * \file tap++.h
+ *
+ * \author Adam Marshall (ih8celery)
+ *
+ * \brief declare interface functions and accessible global variables 
+ */
+
 #ifndef LIB_TAPPP_TAPPP_H
 #define LIB_TAPPP_TAPPP_H
 
@@ -6,8 +14,19 @@
 #include <type_traits>
 #include <cmath>
 
+/**
+ * unnecessary macro function
+ */
 #define FLOAT_CMP(left, right, e) (2 * fabs(double(left) - double(right)) / (fabs(double(left)) + fabs(double(right))) > (e))
 
+/**
+ * \macro ok(condition, description)
+ *
+ * \brief primary testing function. uses 'condition' to determine<br>
+ * state of the test, which is described by argument 'description'.<br>
+ * because this is a macro, it is able to avoid evaluation of its<br>
+ * first argument when certain directives are in effect
+ */
 #define ok(condition, description) do {\
   if (TAP::get_finished_testing()) {\
     throw fatal_exception(std::string("testing has finished; no new tests allowed"));\
@@ -23,6 +42,11 @@
   }\
 } while (0)
 
+/**
+ * \macro not_ok(condition, description)
+ * 
+ * \brief similar to ok, but has the opposite treatment of 'condition'
+ */
 #define not_ok(condition, description) do {\
   if (TAP::get_finished_testing()) {\
     throw fatal_exception(std::string("testing has finished; no new tests allowed"));\
@@ -38,30 +62,66 @@
   }\
 } while (0)
 
-// TODO implement structs no_plan_t, skip_all_t, todo_all_t for plan() overloads 
-
-/* a sequence of tests runs in an implicit block with none of the
- * protections of an explicit block
- * a whole block is seen individually as a test whose result indicates
- * failure or success. 0 means success, 1-255 means failure
- * adding a block pushes its plan onto stack, TAP::planned() retrieves top of stack
- * the default plan size is zero
- * TODO 'TODO' macro marks all remaining tests in block
- * TODO SKIP macro skips all remaining tests in block*/
 namespace TAP {
   namespace details {
+    /**
+     * \enum Directive
+     *
+     * \brief defines the three directives controlling the test<br>
+     * emitter. NONE is the default directive; tests proceed normally.<br>
+     * SKIP causes tests to be skipped; in most cases, the condition<br>
+     * will not be evaluated. TODO marks tests as unfinished; tests<br>
+     * marked this way also do not evaluate their conditions
+     */
     enum class Directive { NONE, SKIP, TODO };
 
+    /**
+     * \struct Test_State
+     *
+     * \brief contains information about test groups which is saved<br>
+     * on a stack
+     */
     struct Test_State;
 
+    /**
+     * \struct no_plan_t
+     * \brief used to create a constant passed to plan function.<br>
+     * a test group with no plan will print its 'header' running<br>
+     * its tests
+     */
     struct no_plan_t;
+
+    /**
+     * \struct skip_all_t
+     * \brief used to create a constant passed to plan function.<br>
+     * a test group marked thus will not fully evaluate its tests
+     */
     struct skip_all_t;
+
+    /** 
+     * \struct todo_all_t
+     * \brief used to create a constant passed to plan function.<br>
+     * all tests in such a test group are marked 'todo'
+     */
     struct todo_all_t;
 
+    /**
+     * \var bool test_status
+     * \brief success state of last run test
+     */
     extern bool test_status;
+
+    /**
+     * \var const char * separator
+     * \brief short string separating test state from description in output
+     */
     extern const char * separator;
   }
 
+  /**
+   * \class fatal_exception
+   * \brief encapsulate errors in testing from which TAP cannot recover
+   */
   class fatal_exception : public std::exception {
     std::string msg;
 
@@ -73,51 +133,176 @@ namespace TAP {
   };
 
   namespace {
+    /**
+     * \var std::ostream* output
+     * \brief stream TAP prints normal output to
+     */
     std::ostream* output = &std::cout;
+
+    /**
+     * \var std::ostream* error
+     * \brief stream TAP prints errors to
+     */
     std::ostream* error = &std::cerr;
 
+    /**
+     * \var bool has_finished_testing
+     * \brief false until the outermost test group is finished
+     */
     extern bool has_finished_testing;
   }
 
+  /**
+   * \var const no_plan_t no_plan
+   */
   extern const details::no_plan_t no_plan;
+
+  /**
+   * \var const skip_all_t skil_all
+   */
   extern const details::skip_all_t skip_all;
+
+  /**
+   * \var const todo_all_t todo_all
+   */
   extern const details::todo_all_t todo_all;
 
+  /**
+   * \fn Directive get_directive()
+   * \brief return the value of the current directive
+   */
   details::Directive get_directive();
 
+  /**
+   * \fn bool get_finished_testing()
+   * \brief return the value of has_finished_testing
+   */
   bool get_finished_testing();
 
+  /**
+   * \fn bool _ok(bool, const string& = "")
+   * \brief auxiliary function to most tests
+   */
   bool _ok(bool, const std::string& = "");
 
+  /**
+   * \fn void plan(const no_plan_t&, const string& = "")
+   * \brief explicitly state that test group has no plan
+   */
   void plan(const details::no_plan_t&, const std::string& = "");
+  
+  /**
+   * \fn void plan(const skip_all_t&, const string&= "")
+   * \brief explicitly state that all tests in group should be skipped
+   */
   void plan(const details::skip_all_t&, const std::string& = "");
+  
+  /**
+   * \fn void plan(const todo_all_t&, const string& = "")
+   * \brief explicitly state that all tests in group are unfinished
+   */
   void plan(const details::todo_all_t&, const std::string& = "");
+  
+  /**
+   * \fn void plan(unsigned, const string& = "")
+   * \brief specify that test group contains a certain number of tests
+   */
   void plan(unsigned, const std::string& = "");
 
+  /**
+   * \fn void done_testing()
+   * \brief declare that testing the current group has finished
+   */
   void done_testing();
+  
+  /**
+   * \fn void done_testing(unsigned)
+   * \brief declare that testing a group has finished after running<br>
+   * a number of tests. to be used when the current test group was<br>
+   * unplanned to give late a number of expected tests
+   */
   void done_testing(unsigned);
 
+  /**
+   * \fn unsigned planned()
+   * \brief return number of tests planned for this group
+   */
   unsigned planned() noexcept;
+
+  /**
+   * \fn unsigned encountered()
+   * \brief return number of tests found so far in a group
+   */
   unsigned encountered() noexcept;
 
+  /**
+   * \fn void pass(const string& = "")
+   * \brief automatically pass test described by string
+   */
   void pass(const std::string& = "");
+  
+  /**
+   * \fn void pass(const string& = "")
+   * \brief automatically fail test described by string
+   */
   void fail(const std::string& = "");
 
+  /**
+   * \fn void fail(const string& = "")
+   * \brief skip a certain number of tests for reason in string
+   */
   void skip(unsigned, const std::string& = "");
+
+  /**
+   * \fn void skip(const string& = "")
+   * \brief skip the next test for reason given in string
+   */
   void skip(const std::string& = "");
 
+  /**
+   * \fn void todo(unsigned, const string& = "")
+   * \brief mark a certain number of tests unfinished for reason<br>
+   * given by string
+   */
   void todo(unsigned, const std::string& = "");
+  
+  /**
+   * \fn void todo(const string& = "")
+   * \brief mark next test unfinished for reason given by string
+   */
   void todo(const std::string& = "");
 
+  /**
+   * \fn void bail_out(const string& = "")
+   * \brief immediately exit from the test process
+   */
   void bail_out(const std::string& reason);
 
+  /**
+   * \fn int exit_status()
+   * \brief return the number of tests failed or 255, whichever is smaller
+   */
   int exit_status();
+  
+  /**
+   * \fn bool summary()
+   * \brief return success or failure of test group
+   */
   bool summary() noexcept;
 
+  /**
+   * \fn void set_output(ostream&)
+   * \brief set the output stream
+   */
   void set_output(std::ostream&);
+  
+  /**
+   * \fn void set_error(ostream&)
+   * \brief set the error stream
+   */
   void set_error(std::ostream&); 
   
-  // diagnostic templates {
+  // diagnostic templates
   template<typename T>
   void diag(const T& first) {
     *error << "# " << first << std::endl;
@@ -138,7 +323,7 @@ namespace TAP {
   void diag(const T1& first, const T2& second, const T3& third, const T4& fourth, const T5& fifth) {
     *error << "# " << first << second << third << fourth << fifth << std::endl;
   }
-  // }
+  
   // comment templates {
   template<typename T>
   void note(const T& first) {
