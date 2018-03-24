@@ -17,7 +17,7 @@
 /**
  * unnecessary macro function
  */
-#define FLOAT_CMP(left, right, e) (2 * fabs(double(left) - double(right)) / (fabs(double(left)) + fabs(double(right))) > (e))
+#define FLOAT_CMP(left, right, e) ((2 * fabs(double(left) - double(right)) / (fabs(double(left)) + fabs(double(right)))) < (e))
 
 /**
  * \define ok(condition, description)
@@ -361,7 +361,7 @@ namespace TAP {
     *error << test_indent << "  message: " << msg << std::endl;
     *error << test_indent << "  severity: fail" << std::endl;
     *error << test_indent << "  data:" << std::endl;
-    *error << test_indent << "    got: " << got << std::endl;
+    *error << test_indent << "       got: " << got << std::endl;
     *error << test_indent << "    expect: " << expect << std::endl;
     *error << test_indent << "  ..." << std::endl;
   }
@@ -456,7 +456,7 @@ namespace TAP {
   typename std::enable_if<std::is_floating_point<U>::value, void>::type
   is(const T& left, const U& right, const std::string& description = "", double epsilon = 0.01) {
     bool cmp_failed = !(FLOAT_CMP(left, right, epsilon));
-
+    
     if (pre_print_yaml && cmp_failed) {
       yaml_fail(description, left, right);
     }
