@@ -1,8 +1,10 @@
 /*
- * 10-basic.cpp
+ * \file 10-basic.cpp
  *
- * test more of the basic features of libtap++. these tests do not
- * cover any of the symbols defined when WANT_TEST_EXTRAS is 
+ * \author Adam Marshall (ih8celery)
+ *
+ * \brief test more of the basic features of libtap++. these tests<br>
+ * do not cover any of the symbols defined when WANT_TEST_EXTRAS is<br> 
  * defined
  */
 
@@ -11,7 +13,7 @@
 using namespace TAP;
 
 int main() {
-  plan(7);
+  plan(10);
 
   ok(1+1 == 2, "1+1 == 2");
 
@@ -26,11 +28,17 @@ int main() {
 
   is(1.0, 1.0, "1.0 is 1.0");
 
+  is(1.0, 0.5, "1.0 is close to 0.5", 1.0);
+
   pass("wunderbar! this test passed");
 
   fail("this test should fail");
 
+  not_ok(summary(), "all tests passed, except one");
+
+  not_ok(get_finished_testing(), "tests not yet finished");
+
   done_testing();
 
-  return exit_status();
+  return exit_status() - 1;
 }

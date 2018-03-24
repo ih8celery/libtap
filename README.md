@@ -22,7 +22,7 @@ directed more to perl users than to C++ programmers. since I was looking
 for C++ projects, I decided to maintain libtap++ for myself.
 
 # Where to Read More
-  as development continues, [userman](./doc/userman.md) will be updated with complete 
+  as development continues, [manual](./doc/html/index.html) will be updated with complete 
 information about all parts of the project. this document was originally
 written by Leon Timmermans in POD format.
 
